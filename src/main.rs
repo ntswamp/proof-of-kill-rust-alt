@@ -1,20 +1,19 @@
-const PHYSICAL_DAMAGE_RATE : f32 = 0.5;
-const MENTAL_DAMAGE_RATE : f32 = 0.8;
-
 #[derive(Debug)]
 struct Point {
     health : i32,
-    maxhealth : i32,
+    health_max : i32,
     action : i32,
+    action_max : i32,
+    attack : i32,
 }
 
 #[derive(Debug)]
 struct Quality {
-    vigor: f32,
-    strength: f32,
-    agility:f32,
-    knowledge:f32,
-    toughness:f32,
+    vigor: i32,
+    strength: i32,
+    agility:i32,
+    knowledge:i32,
+    toughness:i32,
 }
 
 #[derive(Debug)]
@@ -33,17 +32,19 @@ struct Mage {
 
 
 trait Character {
-    fn create(name:String, vigor:f32,strength:f32,agility:f32,knowledge:f32,toughness:f32) -> Self;
+    fn create(name:String, vigor:i32,strength:i32,agility:i32,knowledge:i32,toughness:i32) -> Self;
 
-    fn report(&self);
+    fn report_quality(&self);
+
+    fn report_point(&self);
 
     fn current_health(&self) -> i32;
 
     fn current_action(&self) -> i32;
 
-    fn produce_damage(&self) -> f32;
+    fn produce_damage(&mut self) -> i32;
 
-    fn take_damage(&mut self,damage:f32);
+    fn take_damage(&mut self,damage:i32);
 
     fn regenerate(&mut self);
 
@@ -51,10 +52,9 @@ trait Character {
 }
 
 
-const WARRIOR_VIGOR_RATE:f32 = 10.0;
-const WARRIOR_TOUGHNESS_RATE:f32 = 1.5;
+//classes
 impl Character for Warrior {    
-    fn create(name:String, vigor:f32,strength:f32,agility:f32,knowledge:f32,toughness:f32) -> Self {
+    fn create(name:String, vigor:i32,strength:i32,agility:i32,knowledge:i32,toughness:i32) -> Self {
         Warrior {
             name:name,
             quality: Quality {
@@ -65,15 +65,21 @@ impl Character for Warrior {
                 toughness:toughness,
             },
             point: Point {
-                health: (vigor * WARRIOR_VIGOR_RATE) as i32,
-                maxhealth:(vigor * WARRIOR_VIGOR_RATE) as i32,
-                action : agility as i32,
+                health: vigor,
+                health_max:120,
+                action : agility,
+                action_max:agility + knowledge,
+                attack: strength,
             }
         }
     }
 
-    fn report(&self) {
-        println!("{:#?}", self);
+    fn report_quality(&self) {
+        println!("{}'s quality:\n{:#?}", self.name,self.quality);
+    }
+
+    fn report_point(&self) {
+        println!("{}'s current state:\n{:#?}", self.name,self.point);
     }
 
     fn current_health(&self) -> i32 {
@@ -87,17 +93,29 @@ impl Character for Warrior {
         self.point.action
     }
 
-    fn produce_damage(&self) -> f32 {
-        self.quality.strength * PHYSICAL_DAMAGE_RATE
+    fn produce_damage(&mut self) -> i32 {
+        self.point.action = self.point.action - 2;
+        if self.point.action < 0 {
+            self.point.action = 0;
+            return 0;
+        }
+        self.point.attack
     }
 
-    fn take_damage(&mut self, damage: f32) {
-        self.point.health = self.point.health - damage as i32;
+    fn take_damage(&mut self, damage: i32) {
+        self.point.health = self.point.health - damage;
     }
 
 
     fn regenerate(&mut self) {
-        self.point.health = (self.point.health as f32 + self.quality.toughness * WARRIOR_TOUGHNESS_RATE) as i32;
+        self.point.health = self.point.health + self.quality.toughness;
+        self.point.action = self.point.action + self.quality.agility;
+        if self.point.health > self.point.health_max {
+            self.point.health = self.point.health_max;
+        }
+        if self.point.action > self.point.action_max {
+            self.point.action = self.point.action_max;
+        }
     }
 
     fn die(&self) {
@@ -105,10 +123,9 @@ impl Character for Warrior {
     }
 }
 
-const MAGE_VIGOR_RATE:f32 = 8.0;
-const MAGE_TOUGHNESS_RATE:f32 = 1.0;
+
 impl Character for Mage {    
-    fn create(name:String, vigor:f32,strength:f32,agility:f32,knowledge:f32,toughness:f32) -> Self {
+    fn create(name:String, vigor:i32,strength:i32,agility:i32,knowledge:i32,toughness:i32) -> Self {
         Mage {
             name:name,
             quality: Quality {
@@ -119,15 +136,21 @@ impl Character for Mage {
                 toughness:toughness,
             },
             point: Point {
-                health: (vigor * MAGE_VIGOR_RATE) as i32,
-                maxhealth:(vigor * MAGE_VIGOR_RATE) as i32,
-                action : agility as i32,
+                health: vigor,
+                health_max:80,
+                action : knowledge,
+                action_max:agility + strength,
+                attack: knowledge,
             }
         }
     }
 
-    fn report(&self) {
-        println!("{:#?}", self);
+    fn report_quality(&self) {
+        println!("{}'s quality:\n{:#?}", self.name,self.quality);
+    }
+
+    fn report_point(&self) {
+        println!("{}'s current state:\n{:#?}", self.name,self.point);
     }
 
     fn current_health(&self) -> i32 {
@@ -141,17 +164,29 @@ impl Character for Mage {
         self.point.action
     }
 
-    fn produce_damage(&self) -> f32 {
-        self.quality.knowledge * MENTAL_DAMAGE_RATE
+    fn produce_damage(&mut self) -> i32 {
+        self.point.action = self.point.action - 3;
+        if self.point.action < 0 {
+            self.point.action = 0;
+            return 0;
+        }
+        self.point.attack
     }
 
-    fn take_damage(&mut self, damage: f32) {
-        self.point.health = self.point.health - damage as i32;
+    fn take_damage(&mut self, damage: i32) {
+        self.point.health = self.point.health - damage;
     }
 
 
     fn regenerate(&mut self) {
-        self.point.health = (self.point.health as f32 + self.quality.toughness * MAGE_TOUGHNESS_RATE) as i32;
+        self.point.health = self.point.health + self.quality.toughness;
+        self.point.action = self.point.action + self.quality.agility;
+        if self.point.health > self.point.health_max {
+            self.point.health = self.point.health_max;
+        }
+        if self.point.action > self.point.action_max {
+            self.point.action = self.point.action_max;
+        }
     }
 
     fn die(&self) {
@@ -179,12 +214,16 @@ fn versus(fighter1: &mut impl Character,fighter2:&mut impl Character) -> FightRe
         //decide the first-mover
         if fighter1.current_action() > fighter2.current_action() {
             fighter2.take_damage(fighter1.produce_damage());
+            fighter1.take_damage(fighter2.produce_damage());
         } else {
             fighter1.take_damage(fighter2.produce_damage());
+            fighter2.take_damage(fighter1.produce_damage());
         }
+        fighter1.regenerate();
+        fighter2.regenerate();
         
-        fighter1.report();
-        fighter2.report();
+        fighter1.report_point();
+        fighter2.report_point();
     }
     FightResult::make()
     
@@ -192,9 +231,9 @@ fn versus(fighter1: &mut impl Character,fighter2:&mut impl Character) -> FightRe
 
 
 fn main() {
-    let mut warrior = Warrior::create(String::from("Christopher the Warrior"),100.0,20.0,5.0,1.0,3.0);
+    let mut warrior = Warrior::create("Axe the Warrior".to_owned(),100,20,3,2,8);
 
-    let mut mage = Mage::create(String::from("Collin the Mage"),80.0,1.0,2.0,30.0,1.0);
+    let mut mage = Mage::create(String::from("Collin the Mage"),55,2,2,40,5);
     
     let result = versus( &mut warrior, &mut mage);
 }

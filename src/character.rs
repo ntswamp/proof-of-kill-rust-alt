@@ -83,7 +83,7 @@ impl Character for Warrior {
     }
 
     fn current_health(&self) -> i32 {
-        if self.point.health < 0 {
+        if self.point.health <= 0 {
             self.die();
         }
         self.point.health
@@ -150,11 +150,11 @@ impl Character for Mage {
     }
 
     fn report_point(&self) {
-        println!("{}'s current state:\n{:#?}", self.name,self.point);
+        println!("{}'s state:\n{:#?}", self.name,self.point);
     }
 
     fn current_health(&self) -> i32 {
-        if self.point.health < 0 {
+        if self.point.health <= 0 {
             self.die();
         }
         self.point.health

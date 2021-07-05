@@ -42,7 +42,7 @@ pub trait Character {
 
     fn current_action(&self) -> i32;
 
-    fn produce_damage(&mut self) -> i32;
+    fn produce_damage(&mut self,random:i32) -> i32;
 
     fn take_damage(&mut self,damage:i32);
 
@@ -93,13 +93,13 @@ impl Character for Warrior {
         self.point.action
     }
 
-    fn produce_damage(&mut self) -> i32 {
+    fn produce_damage(&mut self, randomness: i32) -> i32 {
         self.point.action = self.point.action - 2;
         if self.point.action < 0 {
             self.point.action = 0;
             return 0;
         }
-        self.point.attack
+        self.point.attack + (randomness as f32 * 0.8) as i32
     }
 
     fn take_damage(&mut self, damage: i32) {
@@ -164,13 +164,13 @@ impl Character for Mage {
         self.point.action
     }
 
-    fn produce_damage(&mut self) -> i32 {
+    fn produce_damage(&mut self,randomness:i32) -> i32 {
         self.point.action = self.point.action - 3;
         if self.point.action < 0 {
             self.point.action = 0;
             return 0;
         }
-        self.point.attack
+        self.point.attack + (randomness as f32 * 1.5) as i32
     }
 
     fn take_damage(&mut self, damage: i32) {

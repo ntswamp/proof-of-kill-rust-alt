@@ -17,21 +17,21 @@ struct Quality {
 }
 
 #[derive(Debug)]
-struct Warrior {
+pub struct Warrior {
     name: String,
     quality: Quality,
     point: Point,
 }
 
 #[derive(Debug)]
-struct Mage {
+pub struct Mage {
     name: String,
     quality: Quality,
     point: Point,
 }
 
 
-trait Character {
+pub trait Character {
     fn create(name:String, vigor:i32,strength:i32,agility:i32,knowledge:i32,toughness:i32) -> Self;
 
     fn report_quality(&self);
@@ -192,48 +192,4 @@ impl Character for Mage {
     fn die(&self) {
         println!("{} is died, game over.", self.name);
     }
-}
-
-
-struct FightResult {
-    winner: String,
-}
-
-impl FightResult {
-    fn make() -> FightResult {
-        FightResult {
-            winner: String::from("ntswamp"),
-        }
-
-    }
-}
-
-fn versus(fighter1: &mut impl Character,fighter2:&mut impl Character) -> FightResult{
-
-    while fighter1.current_health() > 0 && fighter2.current_health() > 0 {
-        //decide the first-mover
-        if fighter1.current_action() > fighter2.current_action() {
-            fighter2.take_damage(fighter1.produce_damage());
-            fighter1.take_damage(fighter2.produce_damage());
-        } else {
-            fighter1.take_damage(fighter2.produce_damage());
-            fighter2.take_damage(fighter1.produce_damage());
-        }
-        fighter1.regenerate();
-        fighter2.regenerate();
-        
-        fighter1.report_point();
-        fighter2.report_point();
-    }
-    FightResult::make()
-    
-}
-
-
-fn main() {
-    let mut warrior = Warrior::create("Axe the Warrior".to_owned(),100,20,3,2,8);
-
-    let mut mage = Mage::create(String::from("Collin the Mage"),55,2,2,40,5);
-    
-    let result = versus( &mut warrior, &mut mage);
 }

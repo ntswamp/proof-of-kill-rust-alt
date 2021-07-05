@@ -1,3 +1,6 @@
+//TODO:  how do i combine fight and verification into one process?
+//through that i have user a reason to verify (for winning fights/coins).
+
 use crate::character::Character;
 use rand::Rng;
 

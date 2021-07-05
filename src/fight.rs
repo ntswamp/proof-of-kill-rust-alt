@@ -46,6 +46,9 @@ pub fn versus(fighter1: &mut impl Character,fighter2:&mut impl Character, random
             }
             fighter1.regenerate();
             fighter2.regenerate();
+
+            fighter1.report_point();
+            fighter2.report_point();
             }
             return FightResult::make(random_seed);
         },

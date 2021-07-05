@@ -2,8 +2,9 @@
  * 
  * TODO:  how do i combine fight and verification into one process?
  * only by this way we can have users a reason to do verification (for winning fights/coins).
- * maybe let the "random seed" which is necessarily used in a fight can only be produced by verification process?
- * so that for having a fight you must did a verification at the first place.
+ * maybe let the "random seed" which is necessarily used in a fight can be only produced by the verification process?
+ * so that before having a fight users must go complete one verification in the first place.
+ * (turn the "random seed" into a sort of *ticket* for the fight)
 */
 use crate::character::Character;
 use rand::Rng;

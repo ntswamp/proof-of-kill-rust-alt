@@ -1,12 +1,7 @@
-use data_encoding::HEXUPPER;
-use ring::digest::{Context, Digest, SHA256};
-use rand_core::SeedableRng;
-use rand_seeder::{Seeder, SipHasher};
+use ring::digest::{Context, SHA256};
+use rand_seeder::{Seeder};
 use rand_pcg::Pcg64;
-use rand::Rng;
-
-use std::fs::File;
-use std::io::{BufReader, Read, Write};
+use std::io::{BufReader, Read};
 
 //produce a random number generator from SHA256 hashes
 fn sha256_generator<R: Read>(mut reader: R) -> Result<Pcg64,std::io::Error> {
@@ -30,12 +25,16 @@ fn sha256_generator<R: Read>(mut reader: R) -> Result<Pcg64,std::io::Error> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use rand::Rng;
+    use std::fs::File;
     #[test]
     fn sha256_generator_test()-> Result<(),std::io::Error> {
+        
+        
         let path = "file.txt";
     
         let mut output = File::create(path)?;
-        write!(output, "aaaasdfsdWe will generate a digest of this text")?;
+        write!(output, "We will generate a digest of this text")?;
     
         let input = File::open(path)?;
         let reader = BufReader::new(input);

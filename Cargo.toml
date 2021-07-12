@@ -11,3 +11,8 @@ path = "src/lib.rs"
 
 [dependencies]
 rand = "0.8.4"
+data-encoding = "2.3.2"
+ring = "0.16.20"
+rand_core = "0.6.3"
+rand_seeder = "0.2.2"
+rand_pcg = "0.3.1"

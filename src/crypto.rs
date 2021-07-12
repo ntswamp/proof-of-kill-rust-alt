@@ -31,10 +31,7 @@ mod tests {
     fn sha256_generator_test()-> Result<(),std::io::Error> {
         
         
-        let path = "file.txt";
-    
-        let mut output = File::create(path)?;
-        write!(output, "We will generate a digest of this text")?;
+        let path = "target/debug/bin.d";
     
         let input = File::open(path)?;
         let reader = BufReader::new(input);

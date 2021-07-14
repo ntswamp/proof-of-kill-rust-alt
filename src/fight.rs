@@ -8,6 +8,7 @@
 */
 use crate::character::Character;
 use rand::Rng;
+use serde::{Serialize, Deserialize};
 
 pub fn versus(fighter1: &mut impl Character,fighter2:&mut impl Character, random_seed:Option<Vec<i32>>) -> FightResult{
     match random_seed {
@@ -62,6 +63,7 @@ pub fn versus(fighter1: &mut impl Character,fighter2:&mut impl Character, random
  * 
  **/
 
+ #[derive(Serialize, Deserialize)]
 pub struct FightResult {
     winner: String,
 }

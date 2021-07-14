@@ -16,3 +16,6 @@ ring = "0.16.20"
 rand_core = "0.6.3"
 rand_seeder = "0.2.2"
 rand_pcg = "0.3.1"
+sled = "0.34.6"
+serde = {"version" = "1.0", features =["derive"]}
+log = "0.4.14"

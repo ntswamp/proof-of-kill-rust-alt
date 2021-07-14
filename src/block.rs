@@ -1,5 +1,7 @@
 use crate::fight::*;
+use serde::{Serialize, Deserialize};
 
+#[derive(Serialize, Deserialize)]
 enum State {
     UNVERIFIED,
     VERIFIED,
@@ -8,7 +10,7 @@ enum State {
 }
 
 
-
+#[derive(Serialize, Deserialize)]
 pub struct Block {
     state: State,
     earlier_world_shape:String,

@@ -1,6 +1,6 @@
 mod block;
 mod blockchain;
-mod agent;
+mod account;
 mod class;
 mod cli;
 mod crypto;

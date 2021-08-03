@@ -5,7 +5,9 @@ use crate::blockchain::*;
 use crate::server::*;
 use crate::transaction::*;
 use crate::utxoset::*;
-use crate::wallets::*;
+use crate::agent::*;
+use crate::class::*;
+use crate::weapon::*;
 use bitcoincash_addr::Address;
 use clap::{App, Arg};
 use std::process::exit;
@@ -137,9 +139,9 @@ impl Cli {
 fn cmd_send(from: &str, to: &str, amount: i32, mine_now: bool) -> Result<()> {
     let bc = Blockchain::new()?;
     let mut utxo_set = UTXOSet { blockchain: bc };
-    let wallets = Wallets::new()?;
-    let wallet = wallets.get_wallet(from).unwrap();
-    let tx = Transaction::new_UTXO(wallet, to, amount, &utxo_set)?;
+    let agent : Agent<Box<dyn Class>, Box<dyn Weapon>> = Agent::new(None).unwrap();
+    let wallet = agent.get_keypair_by_address(from).unwrap();
+    let tx = Transaction::send(wallet, to, amount, &utxo_set)?;
     if mine_now {
         let cbtx = Transaction::new_coinbase(from.to_string(), String::from("reward!"))?;
         let new_block = utxo_set.blockchain.mine_block(vec![cbtx, tx])?;
@@ -154,9 +156,9 @@ fn cmd_send(from: &str, to: &str, amount: i32, mine_now: bool) -> Result<()> {
 }
 
 fn cmd_create_wallet() -> Result<String> {
-    let mut ws = Wallets::new()?;
-    let address = ws.create_wallet();
-    ws.save_agent()?;
+    let mut ws : Agent<Box<dyn Class>, Box<dyn Weapon>> = Agent::new(None).unwrap();
+    let address = ws.generate_address();
+    ws.save()?;
     Ok(address)
 }
 
@@ -169,7 +171,7 @@ fn cmd_reindex() -> Result<i32> {
 
 fn cmd_create_blockchain(address: &str) -> Result<()> {
     let address = String::from(address);
-    let bc = Blockchain::create_blockchain(address)?;
+    let bc = Blockchain::recreate_blockchain(address)?;
 
     let utxo_set = UTXOSet { blockchain: bc };
     utxo_set.reindex()?;
@@ -199,7 +201,7 @@ fn cmd_print_chain() -> Result<()> {
 }
 
 fn cmd_list_address() -> Result<()> {
-    let ws = Wallets::new()?;
+    let ws : Agent<Box<dyn Class>, Box<dyn Weapon>> = Agent::new(None).unwrap();
     let addresses = ws.get_all_addresses();
     println!("addresses: ");
     for ad in addresses {

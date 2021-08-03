@@ -547,13 +547,15 @@ fn bytes_to_cmd(bytes: &[u8]) -> Result<Message> {
 mod test {
     use super::*;
     use crate::blockchain::*;
-    use crate::wallets::*;
+    use crate::agent::*;
+    use crate::class::*;
+    use crate::weapon::*;
 
     #[test]
     fn test_cmd() {
-        let mut ws = Wallets::new().unwrap();
-        let wa1 = ws.create_wallet();
-        let bc = Blockchain::create_blockchain(wa1).unwrap();
+        let mut agent : Agent<Box<dyn Class>, Box<dyn Weapon>> = Agent::new(None).unwrap();
+        let wa1 = agent.generate_address();
+        let bc = Blockchain::recreate_blockchain(wa1).unwrap();
         let utxo_set = UTXOSet { blockchain: bc };
         let server = Server::new("7878", "localhost:3001", utxo_set).unwrap();
 

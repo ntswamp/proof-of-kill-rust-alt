@@ -1,4 +1,7 @@
 use super::*;
+use crate::class::*;
+use crate::agent::*;
+use crate::weapon::*;
 use crate::transaction::Transaction;
 use bincode::serialize;
 use ::crypto::digest::Digest;
@@ -9,6 +12,7 @@ use serde::{Deserialize, Serialize};
 use std::time::SystemTime;
 
 const TARGET_HEXS: usize = 4;
+const CHANCE:u32 = 100;
 
 #[derive(Serialize, Deserialize)]
 enum State {
@@ -19,20 +23,21 @@ enum State {
 }
 
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct Block {
+#[derive(Serialize, Deserialize, Debug, W: 'static + Clone]
+pub struct Block<C:Class,W:Weapon>{
     timestamp: u128,
     transactions: Vec<Transaction>,
     hash: String,
     prev_block_hash: String,
     height: i32,
     //rest chance for take up a fight
-    chance: i32,
+    chance: u32,
     //current champion of this Block
-    champion:Option<String>,
+    champion_id: Option<String>,
+    champion_build: Option<&Build<C, W>>,
 }
 
-impl Block {
+impl<C:Class,W:Weapon> Block<C, W> {
     pub fn get_hash(&self) -> String {
         self.hash.clone()
     }
@@ -50,11 +55,7 @@ impl Block {
     }
 
     /// NewBlock creates and returns Block
-    pub fn new_block(
-        transactions: Vec<Transaction>,
-        prev_block_hash: String,
-        height: i32,
-    ) -> Result<Block> {
+    pub fn new_block(transactions: Vec<Transaction>, prev_block_hash: String,height: i32,) -> Result<Block<impl Class,impl Weapon>> {
         let timestamp = SystemTime::now()
             .duration_since(SystemTime::UNIX_EPOCH)?
             .as_millis();
@@ -63,15 +64,18 @@ impl Block {
             transactions,
             prev_block_hash,
             hash: String::new(),
-            nonce: 0,
             height,
+            chance:CHANCE,
+            champion_id: None,
+            champion_build: None,
         };
+        //this should be replaced by a function which fill champion data
         block.run_proof_of_work()?;
         Ok(block)
     }
 
     /// NewGenesisBlock creates and returns genesis Block
-    pub fn new_genesis_block(coinbase: Transaction) -> Block {
+    pub fn new_genesis_block(coinbase: Transaction) -> Block<C,W> where C:Class,W:Weapon {
         Block::new_block(vec![coinbase], String::new(), 0).unwrap()
     }
 

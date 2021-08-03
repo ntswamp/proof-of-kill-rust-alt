@@ -13,7 +13,7 @@ use rand::Rng;
 use serde::{Deserialize, Serialize};
 use sled;
 use std::collections::HashMap;
-
+use rand::RngCore;
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 pub struct Keypair {
@@ -25,7 +25,7 @@ impl Keypair {
     /// NewWallet creates and returns a Wallet
     fn new() -> Self {
         let mut key: [u8; 32] = [0; 32];
-        let mut rand = rand::rngs::OsRng::new().unwrap();
+        let mut rand = rand::rngs::OsRng;
         rand.fill_bytes(&mut key);
         let (secret_key, public_key) = ed25519::keypair(&key);
         let secret_key = secret_key.to_vec();
@@ -37,7 +37,7 @@ impl Keypair {
     }
 
     /// GetAddress derive address from public key
-    pub fn get_address(&self) -> String {
+    pub fn address(&self) -> String {
         let mut pub_hash: Vec<u8> = self.public_key.clone();
         hash_public_key(&mut pub_hash);
         let address = Address {
@@ -61,24 +61,29 @@ pub fn hash_public_key(pubKey: &mut Vec<u8>) {
     hasher2.result(pubKey);
 }
 
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct Build<C,W> {
+    class: C,
+    weapon: W,
+}
+
 pub struct Agent {
     //HashMap<address, keypair>
     addresses : HashMap<String, Keypair>,
     agent_id : String,
-    class: Box<dyn Class>,
-    weapon:Box<dyn Weapon>,
+    build : Option<Build<Box<dyn Class>, Box<dyn Class>>>,
 }
 
 impl Agent {
     /// CreateAgent creates Agent and fills it from a file if it exists
-    pub fn create(class: Box<dyn Class>, weapon: Box<dyn Weapon>) -> Result<Agent> {
+    pub fn new(build:Option<Build<Box<dyn Class>, Box<dyn Class>>>) -> Result<Agent> {
         const CHARSET: &[u8] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZ\
                             abcdefghijklmnopqrstuvwxyz\
                             `1234567890-=\
                             ~!@#$%^&*()_+";
-        const PASSWORD_LEN: usize = 256;
+        const ID_LENGTH: usize = 256;
         let mut rng = rand::thread_rng();
-        let agent_id: String = (0..PASSWORD_LEN)
+        let agent_id: String = (0..ID_LENGTH)
             .map(|_| {
                 let idx = rng.gen_range(0..CHARSET.len());
                     CHARSET[idx] as char
@@ -86,7 +91,8 @@ impl Agent {
             .collect();
         let mut agent = Agent {
             addresses : HashMap::<String, Keypair>::new(),
-            agent_id : agent_id
+            agent_id : agent_id,
+            build : build
         };
         let db = sled::open("agent")?;
 
@@ -103,7 +109,7 @@ impl Agent {
     /// CreateWallet adds a Wallet to Wallets
     pub fn generate_address(&mut self) -> String {
         let keypair = Keypair::new();
-        let address = keypair.get_address();
+        let address = keypair.address();
         self.addresses.insert(address.clone(), keypair);
         info!("create address: {}", address);
         address
@@ -124,7 +130,7 @@ impl Agent {
     }
 
     /// SaveToFile saves wallets to a file
-    pub fn save_agent(&self) -> Result<()> {
+    pub fn save(&self) -> Result<()> {
         let db = sled::open("agent")?;
 
         for (address, keypair) in &self.addresses {
@@ -147,23 +153,23 @@ mod test {
         let k1 = Keypair::new();
         let k2 = Keypair::new();
         assert_ne!(k1, k2);
-        assert_ne!(k1.get_address(), k2.get_address());
+        assert_ne!(k1.address(), k2.address());
 
         let mut pub2 = k2.public_key.clone();
         hash_public_key(&mut pub2);
         assert_eq!(pub2.len(), 20);
-        let pub_key_hash = Address::decode(&k2.get_address()).unwrap().body;
+        let pub_key_hash = Address::decode(&k2.address()).unwrap().body;
         assert_eq!(pub_key_hash, pub2);
     }
 
     #[test]
     fn test_agent() {
-        let mut agent1 = Agent::create(Box::new(), Box::new()).unwrap();
+        let mut agent1 = Agent::new(None).unwrap();
         let addr1 = agent1.generate_address();
         let keypair1 = agent1.get_keypair_by_address(&addr1).unwrap().clone();
-        agent1.save_agent().unwrap();
+        agent1.save().unwrap();
 
-        let agent2 = Agent::create(Box::new(), Box::new()).unwrap();
+        let agent2=  Agent::new(None).unwrap();
         let keypair2 = agent2.get_keypair_by_address(&addr1).unwrap();
         assert_eq!(&keypair1, keypair2);
     }
@@ -172,8 +178,8 @@ mod test {
     #[should_panic]
     fn test_agent_not_exist() {
         let k3 = Keypair::new();
-        let agent2 = Agent::create(Box::new(), Box::new()).unwrap();
-        agent2.get_keypair_by_address(&k3.get_address()).unwrap();
+        let agent2 = Agent::new(None).unwrap();
+        agent2.get_keypair_by_address(&k3.address()).unwrap();
     }
 
     #[test]

@@ -32,7 +32,8 @@ pub struct Mage {
 
 
 pub trait Class {
-    fn create(name:String, vigor:i32,strength:i32,agility:i32,knowledge:i32,toughness:i32) -> Self;
+    fn create(name:String, vigor:i32,strength:i32,agility:i32,knowledge:i32,toughness:i32) -> Self
+    where Self: Sized;
 
     fn report_quality(&self);
 

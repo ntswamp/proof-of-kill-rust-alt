@@ -2,7 +2,7 @@ pub trait Weapon {
     fn get_damage(&self) -> i32;
 }
 
-struct Sword {
+pub struct Sword {
     damage:i32
 }
 impl Weapon for Sword {
@@ -10,7 +10,7 @@ impl Weapon for Sword {
 }
 
 
-struct Dagger {
+pub struct Dagger {
     damage:i32
 }
 impl Weapon for Dagger {
@@ -18,7 +18,7 @@ impl Weapon for Dagger {
 }
 
 
-struct Hammer {
+pub struct Hammer {
     damage:i32
 }
 impl Weapon for Hammer {

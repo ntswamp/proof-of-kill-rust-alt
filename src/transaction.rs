@@ -12,6 +12,8 @@ use failure::format_err;
 use rand::Rng;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+use rand::RngCore;
+
 
 const SUBSIDY: i32 = 10;
 
@@ -51,7 +53,7 @@ impl Transaction {
     pub fn send(keypair: &Keypair, to: &str, amount: i32, utxo: &UTXOSet) -> Result<Transaction> {
         info!(
             "new Transaction from: {} to: {}",
-            keypair.get_address(),
+            keypair.address(),
             to
         );
         let mut vin = Vec::new();
@@ -83,7 +85,7 @@ impl Transaction {
 
         let mut vout = vec![TXOutput::new(amount, to.to_string())?];
         if acc_v.0 > amount {
-            vout.push(TXOutput::new(acc_v.0 - amount, keypair.get_address())?)
+            vout.push(TXOutput::new(acc_v.0 - amount, keypair.address())?)
         }
 
         let mut tx = Transaction {
@@ -102,7 +104,7 @@ impl Transaction {
         info!("new coinbase Transaction to: {}", to);
         let mut key: [u8; 32] = [0; 32];
         if data.is_empty() {
-            let mut rand = rand::rngs::OsRng::new().unwrap();
+            let mut rand = rand::rngs::OsRng;
             rand.fill_bytes(&mut key);
             data = format!("Reward to '{}'", to);
         }
@@ -260,21 +262,23 @@ impl TXOutput {
 
 #[cfg(test)]
 mod test {
-    use super::*;
+    use super::*;  
+    use crate::weapon::Sword;
+    use crate::class::*;
 
     #[test]
     fn test_signature() {
-        let mut agent = Agent::create(Box::new(),Box::new()).unwrap();
+        let mut agent : Agent<Box<dyn Class>, Box<dyn Weapon>> = Agent::new(None).unwrap();;
         let addr1 = agent.generate_address();
-        let w = agent.get_keypair_by_address(&addr1).unwrap().clone();
-        agent.save_agent().unwrap();
+        let k1 = agent.get_keypair_by_address(&addr1).unwrap().clone();
+        agent.save().unwrap();
         drop(agent);
 
         let data = String::from("test");
-        let tx = Transaction::new_coinbase(wa1, data).unwrap();
+        let tx = Transaction::new_coinbase(addr1, data).unwrap();
         assert!(tx.is_coinbase());
 
-        let signature = ed25519::signature(tx.id.as_bytes(), &w.secret_key);
-        assert!(ed25519::verify(tx.id.as_bytes(), &w.public_key, &signature));
+        let signature = ed25519::signature(tx.id.as_bytes(), &k1.secret_key);
+        assert!(ed25519::verify(tx.id.as_bytes(), &k1.public_key, &signature));
     }
 }

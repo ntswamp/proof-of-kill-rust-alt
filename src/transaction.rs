@@ -56,7 +56,7 @@ impl Transaction {
         let mut vin = Vec::new();
 
         let mut pub_key_hash = wallet.public_key.clone();
-        hash_pub_key(&mut pub_key_hash);
+        hash_public_key(&mut pub_key_hash);
 
         let acc_v = utxo.find_spendable_outputs(&pub_key_hash, amount)?;
 
@@ -266,7 +266,7 @@ mod test {
         let mut ws = Wallets::new().unwrap();
         let wa1 = ws.create_wallet();
         let w = ws.get_wallet(&wa1).unwrap().clone();
-        ws.save_all().unwrap();
+        ws.save_agent().unwrap();
         drop(ws);
 
         let data = String::from("test");

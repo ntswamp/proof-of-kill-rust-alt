@@ -31,7 +31,7 @@ pub struct Mage {
 }
 
 
-pub trait Character {
+pub trait Class {
     fn create(name:String, vigor:i32,strength:i32,agility:i32,knowledge:i32,toughness:i32) -> Self;
 
     fn report_quality(&self);
@@ -53,7 +53,7 @@ pub trait Character {
 
 
 //classes
-impl Character for Warrior {    
+impl Class for Warrior {    
     fn create(name:String, vigor:i32,strength:i32,agility:i32,knowledge:i32,toughness:i32) -> Self {
         Warrior {
             name:name,
@@ -124,7 +124,7 @@ impl Character for Warrior {
 }
 
 
-impl Character for Mage {    
+impl Class for Mage {    
     fn create(name:String, vigor:i32,strength:i32,agility:i32,knowledge:i32,toughness:i32) -> Self {
         Mage {
             name:name,

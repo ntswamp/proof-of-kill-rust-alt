@@ -19,10 +19,10 @@ impl Cli {
 
     pub fn run(&mut self) -> Result<()> {
         info!("run app");
-        let matches = App::new("blockchain-demo")
-            .version("0.1")
-            .author("yunwei37. 1067852565@qq.com")
-            .about("reimplement blockchain_go in rust: a simple blockchain for learning")
+        let matches = App::new("proof-of-kill-demo-version")
+            .version("0.0.1")
+            .author("ntswamp, nterheoid@gmail.com")
+            .about("demonstration of PoK(Proof-of-Kill) consensus model")
             .subcommand(App::new("printchain").about("print all the chain blocks"))
             .subcommand(App::new("createwallet").about("create a wallet"))
             .subcommand(App::new("listaddresses").about("list all addresses"))
@@ -156,7 +156,7 @@ fn cmd_send(from: &str, to: &str, amount: i32, mine_now: bool) -> Result<()> {
 fn cmd_create_wallet() -> Result<String> {
     let mut ws = Wallets::new()?;
     let address = ws.create_wallet();
-    ws.save_all()?;
+    ws.save_agent()?;
     Ok(address)
 }
 

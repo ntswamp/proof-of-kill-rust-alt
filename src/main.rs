@@ -1,6 +1,7 @@
 mod block;
 mod blockchain;
-mod character;
+mod agent;
+mod class;
 mod cli;
 mod crypto;
 mod db;
@@ -9,7 +10,11 @@ mod fight;
 mod server;
 mod transaction;
 mod utxoset;
-mod wallets;
+mod weapon;
+
+//for use of 'info!()'
+#[macro_use]
+extern crate log;
 
 pub type Result<T> = std::result::Result<T, failure::Error>;
 

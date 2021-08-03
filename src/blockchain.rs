@@ -7,7 +7,7 @@ use sled;
 use std::collections::HashMap;
 
 
-const GENESIS_COINBASE_DATA: &str = "The sunset is beautiful -- 18:29, August 3rd, 2021, Tokyo";
+const GENESIS_COINBASE_DATA: &str = "18:29, August 3rd, 2021, Tokyo. The sunset is beautiful.";
 
 /// Blockchain implements interactions with a DB
 #[derive(Debug)]
@@ -42,12 +42,12 @@ impl Blockchain {
     }
 
     /// CreateBlockchain creates a new blockchain DB
-    pub fn create_blockchain(address: String) -> Result<Blockchain> {
+    pub fn recreate_blockchain(address: String) -> Result<Blockchain> {
         info!("Creating new blockchain");
 
         std::fs::remove_dir_all("chain").ok();
         let db = sled::open("chain")?;
-        debug!("Creating new block database");
+        debug!("Creating A New Blockchain Database...");
         let cbtx = Transaction::new_coinbase(address, String::from(GENESIS_COINBASE_DATA))?;
         let genesis: Block = Block::new_genesis_block(cbtx);
         db.insert(genesis.get_hash(), serialize(&genesis)?)?;

@@ -2,12 +2,12 @@
 
 use super::*;
 use crate::utxoset::*;
-use crate::wallets::*;
+use crate::agent::*;
 use bincode::serialize;
 use bitcoincash_addr::Address;
-use crypto::digest::Digest;
-use crypto::ed25519;
-use crypto::sha2::Sha256;
+use ::crypto::digest::Digest;
+use ::crypto::ed25519;
+use ::crypto::sha2::Sha256;
 use failure::format_err;
 use rand::Rng;
 use serde::{Deserialize, Serialize};
@@ -47,15 +47,16 @@ pub struct Transaction {
 
 impl Transaction {
     /// NewUTXOTransaction creates a new transaction
-    pub fn new_UTXO(wallet: &Wallet, to: &str, amount: i32, utxo: &UTXOSet) -> Result<Transaction> {
+    /// to is address
+    pub fn send(keypair: &Keypair, to: &str, amount: i32, utxo: &UTXOSet) -> Result<Transaction> {
         info!(
-            "new UTXO Transaction from: {} to: {}",
-            wallet.get_address(),
+            "new Transaction from: {} to: {}",
+            keypair.get_address(),
             to
         );
         let mut vin = Vec::new();
 
-        let mut pub_key_hash = wallet.public_key.clone();
+        let mut pub_key_hash = keypair.public_key.clone();
         hash_public_key(&mut pub_key_hash);
 
         let acc_v = utxo.find_spendable_outputs(&pub_key_hash, amount)?;
@@ -74,7 +75,7 @@ impl Transaction {
                     txid: tx.0.clone(),
                     vout: out,
                     signature: Vec::new(),
-                    pub_key: wallet.public_key.clone(),
+                    pub_key: keypair.public_key.clone(),
                 };
                 vin.push(input);
             }
@@ -82,7 +83,7 @@ impl Transaction {
 
         let mut vout = vec![TXOutput::new(amount, to.to_string())?];
         if acc_v.0 > amount {
-            vout.push(TXOutput::new(acc_v.0 - amount, wallet.get_address())?)
+            vout.push(TXOutput::new(acc_v.0 - amount, keypair.get_address())?)
         }
 
         let mut tx = Transaction {
@@ -92,7 +93,7 @@ impl Transaction {
         };
         tx.id = tx.hash()?;
         utxo.blockchain
-            .sign_transacton(&mut tx, &wallet.secret_key)?;
+            .sign_transacton(&mut tx, &keypair.secret_key)?;
         Ok(tx)
     }
 
@@ -101,7 +102,7 @@ impl Transaction {
         info!("new coinbase Transaction to: {}", to);
         let mut key: [u8; 32] = [0; 32];
         if data.is_empty() {
-            let mut rand = rand::OsRng::new().unwrap();
+            let mut rand = rand::rngs::OsRng::new().unwrap();
             rand.fill_bytes(&mut key);
             data = format!("Reward to '{}'", to);
         }
@@ -263,11 +264,11 @@ mod test {
 
     #[test]
     fn test_signature() {
-        let mut ws = Wallets::new().unwrap();
-        let wa1 = ws.create_wallet();
-        let w = ws.get_wallet(&wa1).unwrap().clone();
-        ws.save_agent().unwrap();
-        drop(ws);
+        let mut agent = Agent::create(Box::new(),Box::new()).unwrap();
+        let addr1 = agent.generate_address();
+        let w = agent.get_keypair_by_address(&addr1).unwrap().clone();
+        agent.save_agent().unwrap();
+        drop(agent);
 
         let data = String::from("test");
         let tx = Transaction::new_coinbase(wa1, data).unwrap();

@@ -9,8 +9,8 @@ pub struct Blockchain {
 
 impl Blockchain {
     // NewBlockchain creates a new Blockchain db
-    pub fn new() -> Result<Blockchain> {
-        log::info!("open blockchain");
+    pub fn init() -> Result<Blockchain> {
+        log::info!("initializing blockchain");
 
         let db = sled::open("data/blocks")?;
         let hash = match db.get("LAST")? {

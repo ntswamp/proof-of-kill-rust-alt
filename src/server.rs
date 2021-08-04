@@ -548,12 +548,10 @@ mod test {
     use super::*;
     use crate::blockchain::*;
     use crate::agent::*;
-    use crate::class::*;
-    use crate::weapon::*;
 
     #[test]
     fn test_cmd() {
-        let mut agent : Agent<Box<dyn Class>, Box<dyn Weapon>> = Agent::new(None).unwrap();
+        let mut agent = Agent::new(None).unwrap();
         let wa1 = agent.generate_address();
         let bc = Blockchain::recreate_blockchain(wa1).unwrap();
         let utxo_set = UTXOSet { blockchain: bc };

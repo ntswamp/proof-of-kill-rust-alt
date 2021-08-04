@@ -1,7 +1,5 @@
 use super::*;
-use crate::class::*;
 use crate::agent::*;
-use crate::weapon::*;
 use crate::transaction::Transaction;
 use bincode::serialize;
 use ::crypto::digest::Digest;
@@ -23,8 +21,8 @@ enum State {
 }
 
 
-#[derive(Serialize, Deserialize, Debug, W: 'static + Clone]
-pub struct Block<C:Class,W:Weapon>{
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct Block{
     timestamp: u128,
     transactions: Vec<Transaction>,
     hash: String,
@@ -34,10 +32,10 @@ pub struct Block<C:Class,W:Weapon>{
     chance: u32,
     //current champion of this Block
     champion_id: Option<String>,
-    champion_build: Option<&Build<C, W>>,
+    champion_build: Option<Build>,
 }
 
-impl<C:Class,W:Weapon> Block<C, W> {
+impl Block {
     pub fn get_hash(&self) -> String {
         self.hash.clone()
     }
@@ -55,7 +53,7 @@ impl<C:Class,W:Weapon> Block<C, W> {
     }
 
     /// NewBlock creates and returns Block
-    pub fn new_block(transactions: Vec<Transaction>, prev_block_hash: String,height: i32,) -> Result<Block<impl Class,impl Weapon>> {
+    pub fn new_block(transactions: Vec<Transaction>, prev_block_hash: String,height: i32,) -> Result<Block> {
         let timestamp = SystemTime::now()
             .duration_since(SystemTime::UNIX_EPOCH)?
             .as_millis();
@@ -75,7 +73,7 @@ impl<C:Class,W:Weapon> Block<C, W> {
     }
 
     /// NewGenesisBlock creates and returns genesis Block
-    pub fn new_genesis_block(coinbase: Transaction) -> Block<C,W> where C:Class,W:Weapon {
+    pub fn new_genesis_block(coinbase: Transaction) -> Block {
         Block::new_block(vec![coinbase], String::new(), 0).unwrap()
     }
 
@@ -83,7 +81,7 @@ impl<C:Class,W:Weapon> Block<C, W> {
     fn run_proof_of_work(&mut self) -> Result<()> {
         info!("Mining the block");
         while !self.validate()? {
-            self.nonce += 1;
+            self.chance -= 1;
         }
         let data = self.prepare_hash_data()?;
         let mut hasher = Sha256::new();
@@ -98,7 +96,7 @@ impl<C:Class,W:Weapon> Block<C, W> {
         for tx in &self.transactions {
             transactions.push(tx.hash()?.as_bytes().to_owned());
         }
-        let tree = CBMT::<Vec<u8>, MergeVu8>::build_merkle_tree(transactions);
+        let tree = CBMT::<Vec<u8>, MergeVu8>::build_merkle_tree(&transactions);
 
         Ok(tree.root())
     }
@@ -109,7 +107,7 @@ impl<C:Class,W:Weapon> Block<C, W> {
             self.hash_transactions()?,
             self.timestamp,
             TARGET_HEXS,
-            self.nonce,
+            self.chance,
         );
         let bytes = serialize(&content)?;
         Ok(bytes)

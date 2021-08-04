@@ -1,8 +1,6 @@
 //! approximately equals to the concept of "wallet" in terms of cryptocurrency
 
 use super::*;
-use crate::class::*;
-use crate::weapon::*;
 use bincode::{deserialize, serialize};
 use bitcoincash_addr::*;
 use ::crypto::digest::Digest;
@@ -15,6 +13,11 @@ use sled;
 use std::collections::HashMap;
 use rand::RngCore;
 
+/**
+ * 
+ * keypairs held by an agent
+ * 
+ */
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 pub struct Keypair {
     pub secret_key: Vec<u8>,
@@ -61,22 +64,31 @@ pub fn hash_public_key(pubKey: &mut Vec<u8>) {
     hasher2.result(pubKey);
 }
 
+/**
+ * 
+ * 
+ * Agent
+ * 
+ * 
+ */
+
 #[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct Build<C,W> {
-    class: C,
-    weapon: W,
+pub struct Build {
+    health: i32,
+    class: String,
+    weapon: String,
 }
 
 pub struct Agent {
     //HashMap<address, keypair>
     addresses : HashMap<String, Keypair>,
     agent_id : String,
-    build : Option<Build<Box<dyn Class>, Box<dyn Class>>>,
+    build : Option<Build>,
 }
 
 impl Agent {
     /// CreateAgent creates Agent and fills it from a file if it exists
-    pub fn new(build:Option<Build<Box<dyn Class>, Box<dyn Class>>>) -> Result<Agent> {
+    pub fn new(build:Option<Build>) -> Result<Agent> {
         const CHARSET: &[u8] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZ\
                             abcdefghijklmnopqrstuvwxyz\
                             `1234567890-=\

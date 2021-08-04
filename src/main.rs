@@ -1,7 +1,6 @@
 mod block;
 mod blockchain;
-mod account;
-mod class;
+mod agent;
 mod cli;
 mod crypto;
 mod db;
@@ -10,7 +9,6 @@ mod fight;
 mod server;
 mod transaction;
 mod utxoset;
-mod weapon;
 
 //for use of 'info!()'
 #[macro_use]

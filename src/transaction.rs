@@ -262,13 +262,11 @@ impl TXOutput {
 
 #[cfg(test)]
 mod test {
-    use super::*;  
-    use crate::weapon::Sword;
-    use crate::class::*;
+    use super::*;
 
     #[test]
     fn test_signature() {
-        let mut agent : Agent<Box<dyn Class>, Box<dyn Weapon>> = Agent::new(None).unwrap();;
+        let mut agent = Agent::new(None).unwrap();;
         let addr1 = agent.generate_address();
         let k1 = agent.get_keypair_by_address(&addr1).unwrap().clone();
         agent.save().unwrap();

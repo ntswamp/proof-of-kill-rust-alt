@@ -89,7 +89,7 @@ impl Blockchain {
     pub fn iter(&self) -> BlockchainIterator {
         BlockchainIterator {
             current_hash: self.tip.clone(),
-            bc: &self,
+            blockchain: &self,
         }
     }
 
@@ -227,7 +227,7 @@ impl<'a> Iterator for BlockchainIterator<'a> {
     type Item = Block;
 
     fn next(&mut self) -> Option<Self::Item> {
-        if let Ok(encoded_block) = self.bc.db.get(&self.current_hash) {
+        if let Ok(encoded_block) = self.blockchain.db.get(&self.current_hash) {
             return match encoded_block {
                 Some(b) => {
                     if let Ok(block) = deserialize::<Block>(&b) {

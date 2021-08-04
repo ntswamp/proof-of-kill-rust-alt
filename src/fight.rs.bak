@@ -6,14 +6,11 @@
  * so that before having a fight users must go complete one verification in the first place.
  * (turn the "random seed" into a sort of *ticket* for the fight)
 */
+use crate::class::*;
 use rand::Rng;
 use serde::{Serialize, Deserialize};
-use crate::agent::*;
 
-/*
-
-pub fn versus(fighter1: &mut Build,fighter2:&mut Build, random_seed:Option<Vec<i32>>) -> FightResult{
-    
+pub fn versus(fighter1: &mut impl Class,fighter2:&mut impl Class, random_seed:Option<Vec<i32>>) -> FightResult{
     match random_seed {
         None => {
             let mut random_seed : Vec<i32> = vec![];
@@ -81,7 +78,7 @@ impl FightResult {
     }
 }
 
-fn VerifyFight(random_seed: Vec<i32>,fighter1:&mut Build,fighter2:&mut Build, original_result:&FightResult) -> bool{
+fn VerifyFight(random_seed: Vec<i32>,fighter1:&mut impl Class,fighter2:&mut impl Class, original_result:&FightResult) -> bool{
     //TODO
     true
 }
@@ -116,4 +113,3 @@ mod test {
     
     }
 }
-*/

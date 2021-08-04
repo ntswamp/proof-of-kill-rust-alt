@@ -6,8 +6,6 @@ use crate::server::*;
 use crate::transaction::*;
 use crate::utxoset::*;
 use crate::agent::*;
-use crate::class::*;
-use crate::weapon::*;
 use bitcoincash_addr::Address;
 use clap::{App, Arg};
 use std::process::exit;
@@ -139,7 +137,7 @@ impl Cli {
 fn cmd_send(from: &str, to: &str, amount: i32, mine_now: bool) -> Result<()> {
     let bc = Blockchain::new()?;
     let mut utxo_set = UTXOSet { blockchain: bc };
-    let agent : Agent<Box<dyn Class>, Box<dyn Weapon>> = Agent::new(None).unwrap();
+    let agent = Agent::new(None).unwrap();
     let wallet = agent.get_keypair_by_address(from).unwrap();
     let tx = Transaction::send(wallet, to, amount, &utxo_set)?;
     if mine_now {
@@ -156,9 +154,9 @@ fn cmd_send(from: &str, to: &str, amount: i32, mine_now: bool) -> Result<()> {
 }
 
 fn cmd_create_wallet() -> Result<String> {
-    let mut ws : Agent<Box<dyn Class>, Box<dyn Weapon>> = Agent::new(None).unwrap();
-    let address = ws.generate_address();
-    ws.save()?;
+    let mut agent = Agent::new(None).unwrap();
+    let address = agent.generate_address();
+    agent.save()?;
     Ok(address)
 }
 
@@ -201,8 +199,8 @@ fn cmd_print_chain() -> Result<()> {
 }
 
 fn cmd_list_address() -> Result<()> {
-    let ws : Agent<Box<dyn Class>, Box<dyn Weapon>> = Agent::new(None).unwrap();
-    let addresses = ws.get_all_addresses();
+    let agent = Agent::new(None).unwrap();
+    let addresses = agent.get_all_addresses();
     println!("addresses: ");
     for ad in addresses {
         println!("{}", ad);

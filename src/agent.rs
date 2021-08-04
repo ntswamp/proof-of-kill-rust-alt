@@ -54,14 +54,14 @@ impl Keypair {
 }
 
 /// HashPubKey hashes public key
-pub fn hash_public_key(pubKey: &mut Vec<u8>) {
+pub fn hash_public_key(pub_key: &mut Vec<u8>) {
     let mut hasher1 = Sha256::new();
-    hasher1.input(pubKey);
-    hasher1.result(pubKey);
+    hasher1.input(pub_key);
+    hasher1.result(pub_key);
     let mut hasher2 = Ripemd160::new();
-    hasher2.input(pubKey);
-    pubKey.resize(20, 0);
-    hasher2.result(pubKey);
+    hasher2.input(pub_key);
+    pub_key.resize(20, 0);
+    hasher2.result(pub_key);
 }
 
 /**
@@ -89,6 +89,7 @@ pub struct Agent {
 impl Agent {
     /// CreateAgent creates Agent and fills it from a file if it exists
     pub fn new(build:Option<Build>) -> Result<Agent> {
+        //agent_id is a 256-bit string
         const CHARSET: &[u8] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZ\
                             abcdefghijklmnopqrstuvwxyz\
                             `1234567890-=\

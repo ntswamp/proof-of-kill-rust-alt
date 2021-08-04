@@ -24,7 +24,7 @@ impl Cli {
             .author("ntswamp, nterheoid@gmail.com")
             .about("demonstration of PoK(Proof-of-Kill) consensus model")
             .subcommand(App::new("printchain").about("print all the chain blocks"))
-            .subcommand(App::new("createwallet").about("create a wallet"))
+            .subcommand(App::new("createagent").about("create a wallet"))
             .subcommand(App::new("listaddresses").about("list all addresses"))
             .subcommand(App::new("reindex").about("reindex UTXO"))
             .subcommand(
@@ -65,8 +65,8 @@ impl Cli {
                 let balance = cmd_get_balance(address)?;
                 println!("Balance: {}\n", balance);
             }
-        } else if let Some(_) = matches.subcommand_matches("createwallet") {
-            println!("address: {}", cmd_create_wallet()?);
+        } else if let Some(_) = matches.subcommand_matches("createagent") {
+            println!("address: {}", cmd_create_agent()?);
         } else if let Some(_) = matches.subcommand_matches("printchain") {
             cmd_print_chain()?;
         } else if let Some(_) = matches.subcommand_matches("reindex") {
@@ -153,7 +153,7 @@ fn cmd_send(from: &str, to: &str, amount: i32, mine_now: bool) -> Result<()> {
     Ok(())
 }
 
-fn cmd_create_wallet() -> Result<String> {
+fn cmd_create_agent() -> Result<String> {
     let mut agent = Agent::new(None).unwrap();
     let address = agent.generate_address();
     agent.save()?;
@@ -214,8 +214,8 @@ mod test {
 
     #[test]
     fn test_locally() {
-        let addr1 = cmd_create_wallet().unwrap();
-        let addr2 = cmd_create_wallet().unwrap();
+        let addr1 = cmd_create_agent().unwrap();
+        let addr2 = cmd_create_agent().unwrap();
         cmd_create_blockchain(&addr1).unwrap();
 
         let b1 = cmd_get_balance(&addr1).unwrap();

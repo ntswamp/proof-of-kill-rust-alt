@@ -74,6 +74,7 @@ pub fn hash_public_key(pub_key: &mut Vec<u8>) {
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Build {
+    name: String,
     health: i32,
     class: String,
     weapon: String,
@@ -83,12 +84,12 @@ pub struct Agent {
     //HashMap<address, keypair>
     addresses : HashMap<String, Keypair>,
     agent_id : String,
-    build : Option<Build>,
+    build : Build,
 }
 
 impl Agent {
     /// CreateAgent creates Agent and fills it from a file if it exists
-    pub fn new(build:Option<Build>) -> Result<Agent> {
+    pub fn new(build:Build) -> Result<Agent> {
         //agent_id is a 256-bit string
         const CHARSET: &[u8] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZ\
                             abcdefghijklmnopqrstuvwxyz\
@@ -118,6 +119,15 @@ impl Agent {
         drop(db);
         Ok(agent)
     }
+
+    pub fn get_id(&self) -> &str {
+        &self.agent_id
+    }
+
+    pub fn get_build(&self) -> &Build {
+        &self.build
+    }
+
 
     /// CreateWallet adds a Wallet to Wallets
     pub fn generate_address(&mut self) -> String {
@@ -160,6 +170,12 @@ impl Agent {
 #[cfg(test)]
 mod test {
     use super::*;
+    const build:Build = Build {
+        name : "Tim".to_owned(),
+        health: 100,
+        class: "Warrior".to_owned(),
+        weapon: "Sword".to_owned(),
+    };
 
     #[test]
     fn test_create_keypair_and_hash() {
@@ -177,12 +193,12 @@ mod test {
 
     #[test]
     fn test_agent() {
-        let mut agent1 = Agent::new(None).unwrap();
+        let mut agent1 = Agent::new(build).unwrap();
         let addr1 = agent1.generate_address();
         let keypair1 = agent1.get_keypair_by_address(&addr1).unwrap().clone();
         agent1.save().unwrap();
 
-        let agent2=  Agent::new(None).unwrap();
+        let agent2=  Agent::new(build).unwrap();
         let keypair2 = agent2.get_keypair_by_address(&addr1).unwrap();
         assert_eq!(&keypair1, keypair2);
     }
@@ -191,7 +207,7 @@ mod test {
     #[should_panic]
     fn test_agent_not_exist() {
         let k3 = Keypair::new();
-        let agent2 = Agent::new(None).unwrap();
+        let agent2 = Agent::new(build).unwrap();
         agent2.get_keypair_by_address(&k3.address()).unwrap();
     }
 

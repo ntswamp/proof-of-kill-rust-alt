@@ -31,8 +31,8 @@ pub struct Block{
     //rest chance for take up a fight
     chance: u32,
     //current champion of this Block
-    champion_id: Option<String>,
-    champion_build: Option<Build>,
+    champion_id: String,
+    champion_build: Build,
 }
 
 impl Block {
@@ -53,7 +53,7 @@ impl Block {
     }
 
     /// NewBlock creates and returns Block
-    pub fn new_block(transactions: Vec<Transaction>, prev_block_hash: String,height: i32,) -> Result<Block> {
+    pub fn new_block(transactions: Vec<Transaction>, prev_block_hash: String,height: i32,agent:&Agent) -> Result<Block> {
         let timestamp = SystemTime::now()
             .duration_since(SystemTime::UNIX_EPOCH)?
             .as_millis();
@@ -64,8 +64,8 @@ impl Block {
             hash: String::new(),
             height,
             chance:CHANCE,
-            champion_id: None,
-            champion_build: None,
+            champion_id: agent.get_id().to_owned(),
+            champion_build: agent.get_build().to_owned(),
         };
         //this should be replaced by a function which fill champion data
         block.run_proof_of_work()?;
@@ -74,7 +74,15 @@ impl Block {
 
     /// NewGenesisBlock creates and returns genesis Block
     pub fn new_genesis_block(coinbase: Transaction) -> Block {
-        Block::new_block(vec![coinbase], String::new(), 0).unwrap()
+        let genesis_build: Build = Build {
+            name : "Sauron".to_owned(),
+            health:100,
+            class:"Warlock".to_owned(),
+            weapon:"Dagger".to_owned(),
+        };
+        let genesis_agent = Agent::new(genesis_build).unwrap();
+
+        Block::new_block(vec![coinbase], String::new(), 0,&genesis_agent).unwrap()
     }
 
     /// Run performs a proof-of-work

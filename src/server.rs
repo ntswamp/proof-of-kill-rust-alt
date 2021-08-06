@@ -219,7 +219,7 @@ impl Server {
     }
 
     fn mine_block(&self, txs: Vec<Transaction>) -> Result<Block> {
-        self.inner.lock().unwrap().utxo.blockchain.mine_block(txs)
+        self.inner.lock().unwrap().utxo.blockchain.challenge_last_block(txs)
     }
 
     fn utxo_reindex(&self) -> Result<()> {
@@ -549,9 +549,16 @@ mod test {
     use crate::blockchain::*;
     use crate::agent::*;
 
+    const build:Build = Build {
+        name : "Tim".to_owned(),
+        health: 100,
+        class: "Warrior".to_owned(),
+        weapon: "Sword".to_owned(),
+    };
+
     #[test]
     fn test_cmd() {
-        let mut agent = Agent::new(None).unwrap();
+        let mut agent = Agent::new(build).unwrap();
         let wa1 = agent.generate_address();
         let bc = Blockchain::recreate_blockchain(wa1).unwrap();
         let utxo_set = UTXOSet { blockchain: bc };

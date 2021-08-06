@@ -45,16 +45,18 @@ pub struct Transaction {
     pub id: String,
     pub vin: Vec<TXInput>,
     pub vout: Vec<TXOutput>,
+    pub sender_build : Build,
+    pub chain_height : i32,
 }
 
 impl Transaction {
     /// NewUTXOTransaction creates a new transaction
     /// to is address
-    pub fn send(keypair: &Keypair, to: &str, amount: i32, utxo: &UTXOSet) -> Result<Transaction> {
+    pub fn send(keypair: &Keypair, to_address: &str, amount: i32, utxo: &UTXOSet) -> Result<Transaction> {
         info!(
             "new Transaction from: {} to: {}",
             keypair.address(),
-            to
+            to_address
         );
         let mut vin = Vec::new();
 
@@ -83,7 +85,7 @@ impl Transaction {
             }
         }
 
-        let mut vout = vec![TXOutput::new(amount, to.to_string())?];
+        let mut vout = vec![TXOutput::new(amount, to_address.to_string())?];
         if acc_v.0 > amount {
             vout.push(TXOutput::new(acc_v.0 - amount, keypair.address())?)
         }

@@ -60,9 +60,9 @@ impl Blockchain {
         Ok(bc)
     }
 
-    /// MineBlock mines a new block with the provided transactions
-    pub fn mine_block(&mut self, transactions: Vec<Transaction>) -> Result<Block> {
-        info!("mine a new block");
+    /// obtain last block's build, fight against it with local build.
+    pub fn challenge_last_block(&mut self, transactions: Vec<Transaction>) -> Result<Block> {
+        info!("challenging last block");
 
         for tx in &transactions {
             if !self.verify_transacton(tx)? {
@@ -70,11 +70,10 @@ impl Blockchain {
             }
         }
 
-        let lasthash = self.db.get("LAST")?.unwrap();
 
         let newblock = Block::new_block(
             transactions,
-            String::from_utf8(lasthash.to_vec())?,
+            String::from_utf8(last_hash.to_vec())?,
             self.get_best_height()? + 1,
         )?;
         self.db.insert(newblock.get_hash(), serialize(&newblock)?)?;

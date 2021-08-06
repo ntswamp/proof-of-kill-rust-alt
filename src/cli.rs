@@ -138,11 +138,11 @@ fn cmd_send(from: &str, to: &str, amount: i32, mine_now: bool) -> Result<()> {
     let bc = Blockchain::new()?;
     let mut utxo_set = UTXOSet { blockchain: bc };
     let agent = Agent::new(None).unwrap();
-    let wallet = agent.get_keypair_by_address(from).unwrap();
-    let tx = Transaction::send(wallet, to, amount, &utxo_set)?;
+    let from_keypair = agent.get_keypair_by_address(from).unwrap();
+    let tx = Transaction::send(from_keypair, to, amount, &utxo_set)?;
     if mine_now {
         let cbtx = Transaction::new_coinbase(from.to_string(), String::from("reward!"))?;
-        let new_block = utxo_set.blockchain.mine_block(vec![cbtx, tx])?;
+        let new_block = utxo_set.blockchain.challenge_last_block(vec![cbtx, tx])?;
 
         utxo_set.update(&new_block)?;
     } else {

@@ -25,7 +25,7 @@ impl Cli {
             .version("0.0.1")
             .author("ntswamp <nterheoid@gmail.com>")
             .about("a demonstration of PoK(Proof-of-Kill) consensus model")
-            .subcommand(App::new("chain").about("print current blockchain"))
+            .subcommand(App::new("chain").about("print out current state of blockchain"))
             .subcommand(App::new("newagent").about("(re)create an agent to collect coin for you"))
             .subcommand(App::new("agent").about("show agent stats"))
             .subcommand(App::new("address").about("list all addresses held by your agent"))
@@ -54,11 +54,11 @@ impl Cli {
             .subcommand(
                 App::new("send")
                     .about("send in the blockchain")
-                    .arg(Arg::from_usage("<from> 'Source wallet address'"))
-                    .arg(Arg::from_usage("<to> 'Destination wallet address'"))
-                    .arg(Arg::from_usage("<amount> 'Amount to send'"))
+                    .arg(Arg::from_usage("<from> 'Source Address'"))
+                    .arg(Arg::from_usage("<to> 'Destination Address'"))
+                    .arg(Arg::from_usage("<amount> 'Amount To Send'"))
                     .arg(Arg::from_usage(
-                        "-m --mine 'the from address mine immediately'",
+                        "-m --mine 'Let The From Address Mine Immediately'",
                     )),
             )
             .get_matches();

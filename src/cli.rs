@@ -158,13 +158,12 @@ fn cmd_send(from: &str, to: &str, amount: i32, mine_now: bool) -> Result<()> {
 
 fn cmd_newagent() -> Result<String> {
 
-    let mut name = String::new();
-    let mut class = String::new();
-    let mut weapon = String::new();
-
     loop {
-        
-        println!("Please name your agent:");
+        let mut name = String::new();
+        let mut class = String::new();
+        let mut weapon = String::new();
+
+        println!("\nPlease name your agent:");
         io::stdin()
             .read_line(&mut name)
             .expect("failed to read name");
@@ -265,7 +264,7 @@ fn cmd_newagent() -> Result<String> {
         println!();
 
         println!("{}? this is a good pick.",&weapon);
-        thread::sleep(time::Duration::from_secs(2));
+        thread::sleep(time::Duration::from_secs(1));
 
         println!("At the end of the day, this is what your agent looks like.");
         println!("Name   :  {}",&name);
@@ -274,20 +273,28 @@ fn cmd_newagent() -> Result<String> {
         println!();
         println!("Are you satisfied with this agent?: (y/n)");
 
-        let yesno = String::new();
+        let mut yesno = String::new();
         io::stdin()
         .read_line(&mut yesno)
         .expect("please enter y or n");
 
-        if yesno == "n" {
+        if yesno.trim() == "n" {
             continue;
         }
 
+        println!();
+        println!();
+        println!();
+        
         let build = Build::new(name,class,weapon);
 
         let mut agent = Agent::new(build).unwrap();
         let address = agent.generate_address();
         agent.save()?;
+
+        println!("Congratulation, you made a wise choice.");
+        println!("Use Command `agent` to greet your agent.");
+        
         return Ok(address)
     }
 }

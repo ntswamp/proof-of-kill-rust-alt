@@ -23,7 +23,7 @@ impl Cli {
         info!("run app");
         let matches = App::new("proof-of-kill-demo-version")
             .version("0.0.1")
-            .author("ntswamp, nterheoid@gmail.com")
+            .author("ntswamp <nterheoid@gmail.com>")
             .about("a demonstration of PoK(Proof-of-Kill) consensus model")
             .subcommand(App::new("chain").about("print current blockchain"))
             .subcommand(App::new("newagent").about("(re)create an agent to collect coin for you"))
@@ -71,7 +71,7 @@ impl Cli {
         } else if let Some(_) = matches.subcommand_matches("newagent") {
             println!("address: {}", cmd_newagent()?);
         } else if let Some(_) = matches.subcommand_matches("chain") {
-            cmd_print_chain()?;
+            cmd_chain()?;
         } else if let Some(_) = matches.subcommand_matches("reindex") {
             let count = cmd_reindex()?;
             println!("Done! There are {} transactions in the UTXO set.", count);
@@ -329,7 +329,7 @@ fn cmd_get_balance(address: &str) -> Result<i32> {
     Ok(balance)
 }
 
-fn cmd_print_chain() -> Result<()> {
+fn cmd_chain() -> Result<()> {
     let bc = Blockchain::new()?;
     for b in bc.iter() {
         println!("{:#?}", b);

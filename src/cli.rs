@@ -9,6 +9,8 @@ use crate::agent::*;
 use bitcoincash_addr::Address;
 use clap::{App, Arg};
 use std::process::exit;
+use std::io;
+use std::{thread, time};
 
 pub struct Cli {}
 
@@ -22,10 +24,11 @@ impl Cli {
         let matches = App::new("proof-of-kill-demo-version")
             .version("0.0.1")
             .author("ntswamp, nterheoid@gmail.com")
-            .about("demonstration of PoK(Proof-of-Kill) consensus model")
-            .subcommand(App::new("printchain").about("print all the chain blocks"))
-            .subcommand(App::new("createagent").about("create a wallet"))
-            .subcommand(App::new("listaddresses").about("list all addresses"))
+            .about("a demonstration of PoK(Proof-of-Kill) consensus model")
+            .subcommand(App::new("chain").about("print current blockchain"))
+            .subcommand(App::new("newagent").about("(re)create an agent to collect coin for you"))
+            .subcommand(App::new("agent").about("show agent stats"))
+            .subcommand(App::new("address").about("list all addresses held by your agent"))
             .subcommand(App::new("reindex").about("reindex UTXO"))
             .subcommand(
                 App::new("startnode")
@@ -65,15 +68,15 @@ impl Cli {
                 let balance = cmd_get_balance(address)?;
                 println!("Balance: {}\n", balance);
             }
-        } else if let Some(_) = matches.subcommand_matches("createagent") {
-            println!("address: {}", cmd_create_agent()?);
-        } else if let Some(_) = matches.subcommand_matches("printchain") {
+        } else if let Some(_) = matches.subcommand_matches("newagent") {
+            println!("address: {}", cmd_newagent()?);
+        } else if let Some(_) = matches.subcommand_matches("chain") {
             cmd_print_chain()?;
         } else if let Some(_) = matches.subcommand_matches("reindex") {
             let count = cmd_reindex()?;
             println!("Done! There are {} transactions in the UTXO set.", count);
-        } else if let Some(_) = matches.subcommand_matches("listaddresses") {
-            cmd_list_address()?;
+        } else if let Some(_) = matches.subcommand_matches("address") {
+            cmd_address()?;
         } else if let Some(ref matches) = matches.subcommand_matches("createblockchain") {
             if let Some(address) = matches.value_of("address") {
                 cmd_create_blockchain(address)?;
@@ -153,11 +156,140 @@ fn cmd_send(from: &str, to: &str, amount: i32, mine_now: bool) -> Result<()> {
     Ok(())
 }
 
-fn cmd_create_agent() -> Result<String> {
-    let mut agent = Agent::new(None).unwrap();
-    let address = agent.generate_address();
-    agent.save()?;
-    Ok(address)
+fn cmd_newagent() -> Result<String> {
+
+    let mut name = String::new();
+    let mut class = String::new();
+    let mut weapon = String::new();
+
+    loop {
+        
+        println!("Please name your agent:");
+        io::stdin()
+            .read_line(&mut name)
+            .expect("failed to read name");
+        name = name.trim().to_owned();
+
+        println!();
+        println!();
+        println!();
+        
+        println!("Welcome to the world of PoK, {}.",&name);
+        println!("Now tell me the *class* of your agent, by enter a number:");
+        println!("#1 Warrior");
+        println!("#2 Mage");
+        println!("#3 Archer");
+
+        io::stdin()
+            .read_line(&mut class)
+            .expect("failed to read class");
+
+        class = match class.trim().parse() {
+            Ok(num) => {
+                match num {
+                    1 => "Warrior".to_owned(),
+                    2 => "Mage".to_owned(),
+                    3 => "Archer".to_owned(),
+                    _ => panic!()
+                }
+            },
+            Err(_) => panic!(),
+        };
+
+        println!();
+        println!();
+        println!();
+
+        println!("Good. Your agent looks like an experienced {}.",&class);
+        println!("Now pick a weapon for your agent:");
+
+        match &*class {
+            "Warrior" => {
+                println!("#1 Axe");
+                println!("#2 Warhammer");
+                io::stdin()
+                .read_line(&mut weapon)
+                .expect("failed to read weapon");
+                weapon = match weapon.trim().parse() {
+                    Ok(num) => {
+                        match num {
+                            1 => "Axe".to_owned(),
+                            2 => "Warhammer".to_owned(),
+                            _ => panic!(),
+                        }
+                    },
+                    Err(_) => panic!(),
+                };
+            },
+            "Mage" => {
+                println!("#1 Wand");
+                println!("#2 Sword");
+                io::stdin()
+                .read_line(&mut weapon)
+                .expect("failed to read weapon");
+                weapon = match weapon.trim().parse() {
+                    Ok(num) => {
+                        match num {
+                            1 => "Wand".to_owned(),
+                            2 => "Sword".to_owned(),
+                            _ => panic!(),
+                        }
+                    },
+                    Err(_) => panic!(),
+                };
+            },
+            "Archer" => {
+                println!("#1 Longbow");
+                println!("#2 Crossbow");
+                io::stdin()
+                .read_line(&mut weapon)
+                .expect("failed to read weapon");
+                weapon = match weapon.trim().parse() {
+                    Ok(num) => {
+                        match num {
+                            1 => "Longbow".to_owned(),
+                            2 => "Crossbow".to_owned(),
+                            _ => panic!(),
+                        }
+                    },
+                    Err(_) => panic!(),
+                };
+
+            },
+            _ => {}
+        }
+
+
+        println!();
+        println!();
+        println!();
+
+        println!("{}? this is a good pick.",&weapon);
+        thread::sleep(time::Duration::from_secs(2));
+
+        println!("At the end of the day, this is what your agent looks like.");
+        println!("Name   :  {}",&name);
+        println!("Class  :  {}",&class);
+        println!("Weapon :  {}",&weapon);
+        println!();
+        println!("Are you satisfied with this agent?: (y/n)");
+
+        let yesno = String::new();
+        io::stdin()
+        .read_line(&mut yesno)
+        .expect("please enter y or n");
+
+        if yesno == "n" {
+            continue;
+        }
+
+        let build = Build::new(name,class,weapon);
+
+        let mut agent = Agent::new(build).unwrap();
+        let address = agent.generate_address();
+        agent.save()?;
+        return Ok(address)
+    }
 }
 
 fn cmd_reindex() -> Result<i32> {
@@ -198,7 +330,7 @@ fn cmd_print_chain() -> Result<()> {
     Ok(())
 }
 
-fn cmd_list_address() -> Result<()> {
+fn cmd_address() -> Result<()> {
     let agent = Agent::new(None).unwrap();
     let addresses = agent.get_all_addresses();
     println!("addresses: ");
@@ -214,8 +346,8 @@ mod test {
 
     #[test]
     fn test_locally() {
-        let addr1 = cmd_create_agent().unwrap();
-        let addr2 = cmd_create_agent().unwrap();
+        let addr1 = cmd_newagent().unwrap();
+        let addr2 = cmd_newagent().unwrap();
         cmd_create_blockchain(&addr1).unwrap();
 
         let b1 = cmd_get_balance(&addr1).unwrap();

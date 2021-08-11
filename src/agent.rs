@@ -78,6 +78,31 @@ pub struct Build {
     health: i32,
     class: String,
     weapon: String,
+    attack: i32,
+}
+impl Build {
+    pub fn new(name: String, class: String, weapon:String) -> Self {
+        let health = match &*class {
+            "Warrior" => 100,
+            "Mage" => 60,
+            "Archer" => 80,
+        };
+        let attack = match &*weapon {
+            "Axe" => 20,
+            "Warhammer" => 15,
+            "Wand" => 35,
+            "Sword" => 25,
+            "Longbow" => 25,
+            "Crossbow" => 26,
+        };
+        Build {
+            name,
+            health,
+            class,
+            weapon,
+            attack,
+        }
+    }
 }
 
 pub struct Agent {
@@ -170,12 +195,11 @@ impl Agent {
 #[cfg(test)]
 mod test {
     use super::*;
-    const build:Build = Build {
-        name : "Tim".to_owned(),
-        health: 100,
-        class: "Warrior".to_owned(),
-        weapon: "Sword".to_owned(),
-    };
+    const build:Build= Build::new (
+        "Tim".to_owned(),
+        "Warrior".to_owned(),
+        "Axe".to_owned(),
+    );
 
     #[test]
     fn test_create_keypair_and_hash() {

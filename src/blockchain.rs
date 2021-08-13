@@ -14,6 +14,7 @@ const GENESIS_COINBASE_DATA: &str = "18:29, August 3rd, 2021, Tokyo. The sunset 
 pub struct Blockchain {
     pub tip: String,
     pub db: sled::Db,
+    pub wins: u128,
 }
 
 /// BlockchainIterator is used to iterate over blockchain blocks
@@ -201,6 +202,7 @@ impl Blockchain {
     }
 
     /// GetBestHeight returns the height of the latest block
+    /// return -1 if no blockchain is found
     pub fn get_best_height(&self) -> Result<i32> {
         let lasthash = if let Some(h) = self.db.get("LAST")? {
             h
@@ -210,6 +212,10 @@ impl Blockchain {
         let last_data = self.db.get(lasthash)?.unwrap();
         let last_block: Block = deserialize(&last_data.to_vec())?;
         Ok(last_block.get_height())
+    }
+
+    pub fn get_wins(&self) -> u128 {
+        self.wins
     }
 
     /// GetBlockHashes returns a list of hashes of all the blocks in the chain

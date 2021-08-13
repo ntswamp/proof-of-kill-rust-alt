@@ -27,44 +27,47 @@ enum Message {
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 struct Blockmsg {
-    addr_from: String,
+    from_ip: String,
     block: Block,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 struct GetBlocksmsg {
-    addr_from: String,
+    from_ip: String,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 struct GetDatamsg {
-    addr_from: String,
+    from_ip: String,
     kind: String,
     id: String,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 struct Invmsg {
-    addr_from: String,
+    from_ip: String,
     kind: String,
     items: Vec<String>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 struct Txmsg {
-    addr_from: String,
+    from_ip: String,
     transaction: Transaction,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 struct Versionmsg {
-    addr_from: String,
+    from_ip: String,
     version: i32,
+    //current height of the blockchain
     best_height: i32,
+    //total wins included by current blockchain
+    wins: u128,
 }
 
 pub struct Server {
-    node_address: String,
+    node_ip: String,
     mining_address: String,
     inner: Arc<Mutex<ServerInner>>,
 }
@@ -76,16 +79,16 @@ struct ServerInner {
     mempool: HashMap<String, Transaction>,
 }
 
-const KNOWN_NODE1: &str = "localhost:3000";
+const CENTRAL_NODE: &str = "localhost:3000";
 const CMD_LEN: usize = 12;
 const VERSION: i32 = 1;
 
 impl Server {
     pub fn new(port: &str, miner_address: &str, utxo: UTXOSet) -> Result<Server> {
         let mut node_set = HashSet::new();
-        node_set.insert(String::from(KNOWN_NODE1));
+        node_set.insert(String::from(CENTRAL_NODE));
         Ok(Server {
-            node_address: String::from("localhost:") + port,
+            node_ip: String::from("localhost:") + port,
             mining_address: miner_address.to_string(),
             inner: Arc::new(Mutex::new(ServerInner {
                 known_nodes: node_set,
@@ -98,31 +101,32 @@ impl Server {
 
     pub fn start_server(&self) -> Result<()> {
         let server1 = Server {
-            node_address: self.node_address.clone(),
+            node_ip: self.node_ip.clone(),
             mining_address: self.mining_address.clone(),
             inner: Arc::clone(&self.inner),
         };
         info!(
-            "Start server at {}, minning address: {}",
-            &self.node_address, &self.mining_address
+            "Start server at {}, collect coins by address: {}",
+            &self.node_ip, &self.mining_address
         );
 
         thread::spawn(move || {
             thread::sleep(Duration::from_millis(1000));
+            //if server1 has not any existing blockchain yet
             if server1.get_best_height()? == -1 {
                 server1.request_blocks()
             } else {
-                server1.send_version(KNOWN_NODE1)
+                server1.send_version(CENTRAL_NODE)
             }
         });
 
-        let listener = TcpListener::bind(&self.node_address).unwrap();
+        let listener = TcpListener::bind(&self.node_ip).unwrap();
         info!("Server listen...");
 
         for stream in listener.incoming() {
             let stream = stream?;
             let server1 = Server {
-                node_address: self.node_address.clone(),
+                node_ip: self.node_ip.clone(),
                 mining_address: self.mining_address.clone(),
                 inner: Arc::clone(&self.inner),
             };
@@ -134,7 +138,7 @@ impl Server {
 
     pub fn send_transaction(tx: &Transaction, utxoset: UTXOSet) -> Result<()> {
         let server = Server::new("7000", "", utxoset)?;
-        server.send_tx(KNOWN_NODE1, tx)?;
+        server.send_tx(CENTRAL_NODE, tx)?;
         Ok(())
     }
 
@@ -192,6 +196,10 @@ impl Server {
         self.inner.lock().unwrap().utxo.blockchain.get_best_height()
     }
 
+    fn get_wins(&self) -> u128 {
+        self.inner.lock().unwrap().utxo.blockchain.get_wins()
+    }
+
     fn get_block_hashs(&self) -> Vec<String> {
         self.inner.lock().unwrap().utxo.blockchain.get_block_hashs()
     }
@@ -229,7 +237,7 @@ impl Server {
     /* -----------------------------------------------------*/
 
     fn send_data(&self, addr: &str, data: &[u8]) -> Result<()> {
-        if addr == &self.node_address {
+        if addr == &self.node_ip {
             return Ok(());
         }
         let mut stream = match TcpStream::connect(addr) {
@@ -248,7 +256,7 @@ impl Server {
 
     fn request_blocks(&self) -> Result<()> {
         for node in self.get_known_nodes() {
-            self.send_get_blocks(&node)?
+            self.request_get_blocks(&node)?
         }
         Ok(())
     }
@@ -256,17 +264,17 @@ impl Server {
     fn send_block(&self, addr: &str, b: &Block) -> Result<()> {
         info!("send block data to: {} block hash: {}", addr, b.get_hash());
         let data = Blockmsg {
-            addr_from: self.node_address.clone(),
+            from_ip: self.node_ip.clone(),
             block: b.clone(),
         };
-        let data = serialize(&(cmd_to_bytes("block"), data))?;
+        let data = serialize(&(cmd_to_byte("block"), data))?;
         self.send_data(addr, &data)
     }
 
     fn send_addr(&self, addr: &str) -> Result<()> {
         info!("send address info to: {}", addr);
         let nodes = self.get_known_nodes();
-        let data = serialize(&(cmd_to_bytes("addr"), nodes))?;
+        let data = serialize(&(cmd_to_byte("addr"), nodes))?;
         self.send_data(addr, &data)
     }
 
@@ -276,71 +284,81 @@ impl Server {
             addr, kind, items
         );
         let data = Invmsg {
-            addr_from: self.node_address.clone(),
+            from_ip: self.node_ip.clone(),
             kind: kind.to_string(),
             items,
         };
-        let data = serialize(&(cmd_to_bytes("inv"), data))?;
+        let data = serialize(&(cmd_to_byte("inv"), data))?;
         self.send_data(addr, &data)
     }
 
-    fn send_get_blocks(&self, addr: &str) -> Result<()> {
+    fn request_get_blocks(&self, addr: &str) -> Result<()> {
         info!("send get blocks message to: {}", addr);
         let data = GetBlocksmsg {
-            addr_from: self.node_address.clone(),
+            from_ip: self.node_ip.clone(),
         };
-        let data = serialize(&(cmd_to_bytes("getblocks"), data))?;
+        let data = serialize(&(cmd_to_byte("getblocks"), data))?;
         self.send_data(addr, &data)
     }
 
-    fn send_get_data(&self, addr: &str, kind: &str, id: &str) -> Result<()> {
+    fn request_get_data(&self, addr: &str, kind: &str, id: &str) -> Result<()> {
         info!(
             "send get data message to: {} kind: {} id: {}",
             addr, kind, id
         );
         let data = GetDatamsg {
-            addr_from: self.node_address.clone(),
+            from_ip: self.node_ip.clone(),
             kind: kind.to_string(),
             id: id.to_string(),
         };
-        let data = serialize(&(cmd_to_bytes("getdata"), data))?;
+        let data = serialize(&(cmd_to_byte("getdata"), data))?;
         self.send_data(addr, &data)
     }
 
     pub fn send_tx(&self, addr: &str, tx: &Transaction) -> Result<()> {
         info!("send tx to: {} txid: {}", addr, &tx.id);
         let data = Txmsg {
-            addr_from: self.node_address.clone(),
+            from_ip: self.node_ip.clone(),
             transaction: tx.clone(),
         };
-        let data = serialize(&(cmd_to_bytes("tx"), data))?;
+        let data = serialize(&(cmd_to_byte("tx"), data))?;
         self.send_data(addr, &data)
     }
 
-    fn send_version(&self, addr: &str) -> Result<()> {
-        info!("send version info to: {}", addr);
+    fn send_version(&self, to_ip: &str) -> Result<()> {
+        info!("send version info to: {}", to_ip);
         let data = Versionmsg {
-            addr_from: self.node_address.clone(),
+            from_ip: self.node_ip.clone(),
             best_height: self.get_best_height()?,
             version: VERSION,
+            wins: self.get_wins(),
         };
-        let data = serialize(&(cmd_to_bytes("version"), data))?;
-        self.send_data(addr, &data)
+        let data = serialize( &(cmd_to_byte("version"), data) )?;
+        self.send_data(to_ip, &data)
     }
 
+    /// handle_version defines forking strategy
     fn handle_version(&self, msg: Versionmsg) -> Result<()> {
         info!("receive version msg: {:#?}", msg);
+        /* old version backup
         let my_best_height = self.get_best_height()?;
         if my_best_height < msg.best_height {
-            self.send_get_blocks(&msg.addr_from)?;
+            self.request_get_blocks(&msg.from_ip)?;
         } else if my_best_height > msg.best_height {
-            self.send_version(&msg.addr_from)?;
+            self.send_version(&msg.from_ip)?;
+        }
+        */
+        //always picking the most winning version
+        if self.get_wins() < msg.wins {
+            self.request_get_blocks(&msg.from_ip)?;
+        } else if self.get_wins() > msg.wins {
+            self.send_version(&msg.from_ip)?;
         }
 
-        self.send_addr(&msg.addr_from)?;
+        self.send_addr(&msg.from_ip)?;
 
-        if !self.node_is_known(&msg.addr_from) {
-            self.add_nodes(&msg.addr_from);
+        if !self.node_is_known(&msg.from_ip) {
+            self.add_nodes(&msg.from_ip);
         }
         Ok(())
     }
@@ -357,7 +375,7 @@ impl Server {
     fn handle_block(&self, msg: Blockmsg) -> Result<()> {
         info!(
             "receive block msg: {}, {}",
-            msg.addr_from,
+            msg.from_ip,
             msg.block.get_hash()
         );
         self.add_block(msg.block)?;
@@ -365,7 +383,7 @@ impl Server {
         let mut in_transit = self.get_in_transit();
         if in_transit.len() > 0 {
             let block_hash = &in_transit[0];
-            self.send_get_data(&msg.addr_from, "block", block_hash)?;
+            self.request_get_data(&msg.from_ip, "block", block_hash)?;
             in_transit.remove(0);
             self.replace_in_transit(in_transit);
         } else {
@@ -379,7 +397,7 @@ impl Server {
         info!("receive inv msg: {:#?}", msg);
         if msg.kind == "block" {
             let block_hash = &msg.items[0];
-            self.send_get_data(&msg.addr_from, "block", block_hash)?;
+            self.request_get_data(&msg.from_ip, "block", block_hash)?;
 
             let mut new_in_transit = Vec::new();
             for b in &msg.items {
@@ -393,10 +411,10 @@ impl Server {
             match self.get_mempool_tx(txid) {
                 Some(tx) => {
                     if tx.id.is_empty() {
-                        self.send_get_data(&msg.addr_from, "tx", txid)?
+                        self.request_get_data(&msg.from_ip, "tx", txid)?
                     }
                 }
-                None => self.send_get_data(&msg.addr_from, "tx", txid)?,
+                None => self.request_get_data(&msg.from_ip, "tx", txid)?,
             }
         }
         Ok(())
@@ -405,7 +423,7 @@ impl Server {
     fn handle_get_blocks(&self, msg: GetBlocksmsg) -> Result<()> {
         info!("receive get blocks msg: {:#?}", msg);
         let block_hashs = self.get_block_hashs();
-        self.send_inv(&msg.addr_from, "block", block_hashs)?;
+        self.send_inv(&msg.from_ip, "block", block_hashs)?;
         Ok(())
     }
 
@@ -413,22 +431,22 @@ impl Server {
         info!("receive get data msg: {:#?}", msg);
         if msg.kind == "block" {
             let block = self.get_block(&msg.id)?;
-            self.send_block(&msg.addr_from, &block)?;
+            self.send_block(&msg.from_ip, &block)?;
         } else if msg.kind == "tx" {
             let tx = self.get_mempool_tx(&msg.id).unwrap();
-            self.send_tx(&msg.addr_from, &tx)?;
+            self.send_tx(&msg.from_ip, &tx)?;
         }
         Ok(())
     }
 
     fn handle_tx(&self, msg: Txmsg) -> Result<()> {
-        info!("receive tx msg: {} {}", msg.addr_from, &msg.transaction.id);
+        info!("receive tx msg: {} {}", msg.from_ip, &msg.transaction.id);
         self.insert_mempool(msg.transaction.clone());
 
         let known_nodes = self.get_known_nodes();
-        if self.node_address == KNOWN_NODE1 {
+        if self.node_ip == CENTRAL_NODE {
             for node in known_nodes {
-                if node != self.node_address && node != msg.addr_from {
+                if node != self.node_ip && node != msg.from_ip {
                     self.send_inv(&node, "tx", vec![msg.transaction.id.clone()])?;
                 }
             }
@@ -461,7 +479,7 @@ impl Server {
                     self.utxo_reindex()?;
 
                     for node in self.get_known_nodes() {
-                        if node != self.node_address {
+                        if node != self.node_ip {
                             self.send_inv(&node, "block", vec![new_block.get_hash()])?;
                         }
                     }
@@ -482,7 +500,7 @@ impl Server {
         let count = stream.read_to_end(&mut buffer)?;
         info!("Accept request: length {}", count);
 
-        let cmd = bytes_to_cmd(&buffer)?;
+        let cmd = byte_to_cmd(&buffer)?;
 
         match cmd {
             Message::Addr(data) => self.handle_addr(data)?,
@@ -498,7 +516,7 @@ impl Server {
     }
 }
 
-fn cmd_to_bytes(cmd: &str) -> [u8; CMD_LEN] {
+fn cmd_to_byte(cmd: &str) -> [u8; CMD_LEN] {
     let mut data = [0; CMD_LEN];
     for (i, d) in cmd.as_bytes().iter().enumerate() {
         data[i] = *d;
@@ -506,11 +524,12 @@ fn cmd_to_bytes(cmd: &str) -> [u8; CMD_LEN] {
     data
 }
 
-fn bytes_to_cmd(bytes: &[u8]) -> Result<Message> {
+fn byte_to_cmd(byte: &[u8]) -> Result<Message> {
+    let cmd_byte = &byte[..CMD_LEN];
+    let data = &byte[CMD_LEN..];
+
     let mut cmd = Vec::new();
-    let cmd_bytes = &bytes[..CMD_LEN];
-    let data = &bytes[CMD_LEN..];
-    for b in cmd_bytes {
+    for b in cmd_byte {
         if 0 as u8 != *b {
             cmd.push(*b);
         }
@@ -549,12 +568,7 @@ mod test {
     use crate::blockchain::*;
     use crate::agent::*;
 
-    const build:Build = Build {
-        name : "Tim".to_owned(),
-        health: 100,
-        class: "Warrior".to_owned(),
-        weapon: "Sword".to_owned(),
-    };
+    const build:Build = Build::new("Tim".to_owned(),"Warrior".to_owned(),"Sword".to_owned());
 
     #[test]
     fn test_cmd() {
@@ -565,12 +579,13 @@ mod test {
         let server = Server::new("7878", "localhost:3001", utxo_set).unwrap();
 
         let vmsg = Versionmsg {
-            addr_from: server.node_address.clone(),
+            from_ip: server.node_ip.clone(),
             best_height: server.get_best_height().unwrap(),
             version: VERSION,
+            wins:server.get_wins(),
         };
-        let data = serialize(&(cmd_to_bytes("version"), vmsg.clone())).unwrap();
-        if let Message::Version(v) = bytes_to_cmd(&data).unwrap() {
+        let data = serialize(&(cmd_to_byte("version"), vmsg.clone())).unwrap();
+        if let Message::Version(v) = byte_to_cmd(&data).unwrap() {
             assert_eq!(v, vmsg);
         } else {
             panic!("wrong!");

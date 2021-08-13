@@ -27,9 +27,10 @@ pub struct Block{
     transactions: Vec<Transaction>,
     hash: String,
     prev_block_hash: String,
-    height: i32,
-    //rest chance for take up a fight
+    height: u128,
+    //chance to have fight with transactions
     chance: u32,
+    wins:u32,
     //current champion of this Block
     champion_id: String,
     champion_build: Build,
@@ -48,12 +49,12 @@ impl Block {
         &self.transactions
     }
 
-    pub fn get_height(&self) -> i32 {
+    pub fn get_height(&self) -> u128 {
         self.height
     }
 
     /// NewBlock creates and returns Block
-    pub fn new_block(transactions: Vec<Transaction>, prev_block_hash: String,height: i32,agent:&Agent) -> Result<Block> {
+    pub fn new_block(transactions: Vec<Transaction>, prev_block_hash: String,height: u128,agent:&Agent) -> Result<Block> {
         let timestamp = SystemTime::now()
             .duration_since(SystemTime::UNIX_EPOCH)?
             .as_millis();
@@ -64,31 +65,30 @@ impl Block {
             hash: String::new(),
             height,
             chance:CHANCE,
+            wins : 0,
             champion_id: agent.get_id().to_owned(),
             champion_build: agent.get_build().to_owned(),
         };
         //this should be replaced by a function which fill champion data
-        block.run_proof_of_work()?;
+        block.dogfight()?;
         Ok(block)
     }
 
     /// NewGenesisBlock creates and returns genesis Block
     pub fn new_genesis_block(coinbase: Transaction) -> Block {
-        let genesis_build: Build = Build {
-            name : "Sauron".to_owned(),
-            health:100,
-            class:"Warlock".to_owned(),
-            weapon:"Dagger".to_owned(),
-        };
+        let genesis_build: Build = Build::new("Culty".to_owned(),"Warrior".to_owned(),"Warhammer".to_owned());
         let genesis_agent = Agent::new(genesis_build).unwrap();
 
         Block::new_block(vec![coinbase], String::new(), 0,&genesis_agent).unwrap()
     }
 
     /// Run performs a proof-of-work
-    fn run_proof_of_work(&mut self) -> Result<()> {
+    fn dogfight(&mut self) -> Result<()> {
         info!("Mining the block");
-        while !self.validate()? {
+        while self.chance != 0  {
+            if self.won()? {
+                self.wins += 1;
+            }
             self.chance -= 1;
         }
         let data = self.prepare_hash_data()?;
@@ -121,8 +121,8 @@ impl Block {
         Ok(bytes)
     }
 
-    /// Validate validates block's PoW
-    fn validate(&self) -> Result<bool> {
+    /// won() return true if won the duel.
+    fn won(&self) -> Result<bool> {
         let data = self.prepare_hash_data()?;
         let mut hasher = Sha256::new();
         hasher.input(&data[..]);

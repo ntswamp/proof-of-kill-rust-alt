@@ -110,10 +110,11 @@ impl Blockchain {
         }
 
         
-        let lasthash = self.db.get("LAST")?.unwrap();
+        let last_hash = self.db.get("LAST")?.unwrap();
         let node_id =  env::var("NODE_ID").unwrap();
         let agent = Agent::load(&node_id).unwrap();
 
+        //this will start dogfight() to each of transaction with own agent.
         let newblock = Block::new_block(
             transactions,
             String::from_utf8(last_hash.to_vec())?,

@@ -80,7 +80,10 @@ impl Block {
 
     /// Run performs a proof-of-work
     fn dogfight(&mut self) -> Result<()> {
-        info!("Mining the block");
+        info!("dogfight to the block");
+        for tx in &self.transactions {
+            //do tx.sender_build vs own build
+        }
         while self.chance != 0  {
             if self.won()? {
                 self.wins += 1;

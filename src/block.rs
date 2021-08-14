@@ -41,6 +41,10 @@ impl Block {
         self.hash.clone()
     }
 
+    pub fn get_wins(&self) -> u32 {
+        self.wins
+    }
+
     pub fn get_prev_hash(&self) -> String {
         self.prev_block_hash.clone()
     }
@@ -74,14 +78,6 @@ impl Block {
         Ok(block)
     }
 
-    /// NewGenesisBlock creates and returns genesis Block
-    pub fn new_genesis_block(coinbase: Transaction) -> Block {
-        let genesis_build: Build = Build::new("Culty".to_owned(),"Warrior".to_owned(),"Warhammer".to_owned());
-        let genesis_agent = Agent::new(genesis_build).unwrap();
-
-        Block::new_block(vec![coinbase], String::new(), 0,&genesis_agent).unwrap()
-    }
-
     /// Run performs a proof-of-work
     fn dogfight(&mut self) -> Result<()> {
         info!("Mining the block");
@@ -96,6 +92,14 @@ impl Block {
         hasher.input(&data[..]);
         self.hash = hasher.result_str();
         Ok(())
+    }
+
+    /// NewGenesisBlock creates and returns genesis Block
+    pub fn new_genesis_block(coinbase: Transaction) -> Block {
+        let genesis_build: Build = Build::new("Culty".to_owned(),"Warrior".to_owned(),"Warhammer".to_owned());
+        let genesis_agent = Agent::new(genesis_build).unwrap();
+
+        Block::new_block(vec![coinbase], String::new(), 0,&genesis_agent).unwrap()
     }
 
     /// HashTransactions returns a hash of the transactions in the block

@@ -7,6 +7,7 @@ use ::crypto::digest::Digest;
 use ::crypto::ed25519;
 use ::crypto::ripemd160::Ripemd160;
 use ::crypto::sha2::Sha256;
+use failure::format_err;
 use rand::Rng;
 use serde::{Deserialize, Serialize};
 use sled;
@@ -105,6 +106,7 @@ impl Build {
     }
 }
 
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Agent {
     //HashMap<address, keypair>
     addresses : HashMap<String, Keypair>,
@@ -114,7 +116,9 @@ pub struct Agent {
 
 impl Agent {
     /// CreateAgent creates Agent and fills it from a file if it exists
-    pub fn new(build:Build) -> Result<Agent> {
+    pub fn new(build:Build, node_id:&str) -> Result<Agent> {
+        let agent_path = "data_".to_owned() + node_id + "/agent";
+
         //agent_id is a 256-bit string
         const CHARSET: &[u8] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZ\
                             abcdefghijklmnopqrstuvwxyz\
@@ -133,7 +137,7 @@ impl Agent {
             agent_id : agent_id,
             build : build
         };
-        let db = sled::open("agent")?;
+        let db = sled::open(agent_path)?;
 
         for item in db.into_iter() {
             let i = item?;
@@ -141,7 +145,11 @@ impl Agent {
             let keypair = deserialize(&i.1.to_vec())?;
             agent.addresses.insert(address, keypair);
         }
-        drop(db);
+        //drop(db);
+        let agent_data = serialize(&agent)?;
+        //remove old agent beforehand
+        db.remove("MYAGENT");
+        db.insert("MYAGENT", agent_data);
         Ok(agent)
     }
 
@@ -177,9 +185,10 @@ impl Agent {
         self.addresses.get(address)
     }
 
-    /// SaveToFile saves wallets to a file
-    pub fn save(&self) -> Result<()> {
-        let db = sled::open("agent")?;
+    /// save agent to the disk
+    pub fn save(&self,node_id:&str) -> Result<()> {
+        let agent_path = "data_".to_owned() + node_id + "/agent";
+        let db = sled::open(agent_path)?;
 
         for (address, keypair) in &self.addresses {
             let data = serialize(keypair)?;
@@ -190,6 +199,24 @@ impl Agent {
         drop(db);
         Ok(())
     }
+
+    pub fn load(node_id:&str) -> Result<Agent> {
+        let agent_path = "data_".to_owned() + node_id + "/agent";
+        if !agent_exist(&agent_path) {
+            return Err(format_err!("ERROR: No Existing Agent Found. Create One First."));
+        }
+
+        let db = sled::open(agent_path)?;
+
+        let agent_data = db.get("MYAGENT")?.unwrap();
+        let agent: Agent = deserialize(&agent_data.to_vec())?;
+        Ok(agent)
+    }
+}
+
+///Returns true if db_path points at an existing entity.
+pub fn agent_exist(agent_path: &str) -> bool {
+    std::path::Path::new(agent_path).exists()
 }
 
 #[cfg(test)]
@@ -217,12 +244,12 @@ mod test {
 
     #[test]
     fn test_agent() {
-        let mut agent1 = Agent::new(build).unwrap();
+        let mut agent1 = Agent::new(build,"test").unwrap();
         let addr1 = agent1.generate_address();
         let keypair1 = agent1.get_keypair_by_address(&addr1).unwrap().clone();
-        agent1.save().unwrap();
+        agent1.save("test").unwrap();
 
-        let agent2=  Agent::new(build).unwrap();
+        let agent2=  Agent::new(build,"test").unwrap();
         let keypair2 = agent2.get_keypair_by_address(&addr1).unwrap();
         assert_eq!(&keypair1, keypair2);
     }
@@ -231,7 +258,7 @@ mod test {
     #[should_panic]
     fn test_agent_not_exist() {
         let k3 = Keypair::new();
-        let agent2 = Agent::new(build).unwrap();
+        let agent2 = Agent::new(build,"test").unwrap();
         agent2.get_keypair_by_address(&k3.address()).unwrap();
     }
 

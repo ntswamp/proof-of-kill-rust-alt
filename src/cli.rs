@@ -11,6 +11,7 @@ use clap::{App, Arg};
 use std::process::exit;
 use std::io;
 use std::{thread, time};
+use std::env;
 
 pub struct Cli {}
 
@@ -21,6 +22,14 @@ impl Cli {
 
     pub fn run(&mut self) -> Result<()> {
         info!("run app");
+        let node_id = match env::var("NODE_ID") {
+            Ok(id) => id,
+            Err(err) => {
+                println!("environment variable 'NODE_ID' is not set properly.\nuse 'export NODE_ID=xxxx' to set\n{:?}",err);
+                panic!() 
+            },
+        };
+        
         let matches = App::new("proof-of-kill-demo-version")
             .version("0.0.1")
             .author("ntswamp <nterheoid@gmail.com>")
@@ -108,7 +117,7 @@ impl Cli {
         } else if let Some(ref matches) = matches.subcommand_matches("startnode") {
             if let Some(port) = matches.value_of("port") {
                 println!("Start node...");
-                let bc = Blockchain::new()?;
+                let bc = Blockchain::load()?;
                 let utxo_set = UTXOSet { blockchain: bc };
                 let server = Server::new(port, "", utxo_set)?;
                 server.start_server()?;
@@ -127,7 +136,7 @@ impl Cli {
                 exit(1)
             };
             println!("Start miner node...");
-            let bc = Blockchain::new()?;
+            let bc = Blockchain::load()?;
             let utxo_set = UTXOSet { blockchain: bc };
             let server = Server::new(port, address, utxo_set)?;
             server.start_server()?;
@@ -138,14 +147,14 @@ impl Cli {
 }
 
 fn cmd_send(from: &str, to: &str, amount: i32, mine_now: bool) -> Result<()> {
-    let bc = Blockchain::new()?;
+    let bc = Blockchain::load()?;
     let mut utxo_set = UTXOSet { blockchain: bc };
     let agent = Agent::new(None).unwrap();
     let from_keypair = agent.get_keypair_by_address(from).unwrap();
     let tx = Transaction::send(from_keypair, to, amount, &utxo_set)?;
     if mine_now {
         let cbtx = Transaction::new_coinbase(from.to_string(), String::from("reward!"))?;
-        let new_block = utxo_set.blockchain.challenge_last_block(vec![cbtx, tx])?;
+        let new_block = utxo_set.blockchain.mine_block(vec![cbtx, tx])?;
 
         utxo_set.update(&new_block)?;
     } else {
@@ -157,6 +166,15 @@ fn cmd_send(from: &str, to: &str, amount: i32, mine_now: bool) -> Result<()> {
 }
 
 fn cmd_newagent() -> Result<String> {
+
+    let mut yesno = String::new();
+    io::stdin()
+    .read_line(&mut yesno)
+    .expect("this operation will remove current agent. continue?(y/n)");
+
+    if yesno.trim() == "n" {
+        return Ok("".to_owned());
+    }
 
     loop {
         let mut name = String::new();
@@ -300,7 +318,7 @@ fn cmd_newagent() -> Result<String> {
 }
 
 fn cmd_reindex() -> Result<i32> {
-    let bc = Blockchain::new()?;
+    let bc = Blockchain::load()?;
     let utxo_set = UTXOSet { blockchain: bc };
     utxo_set.reindex()?;
     utxo_set.count_transactions()
@@ -308,7 +326,7 @@ fn cmd_reindex() -> Result<i32> {
 
 fn cmd_create_blockchain(address: &str) -> Result<()> {
     let address = String::from(address);
-    let bc = Blockchain::recreate_blockchain(address)?;
+    let bc = Blockchain::init(address)?;
 
     let utxo_set = UTXOSet { blockchain: bc };
     utxo_set.reindex()?;
@@ -318,7 +336,7 @@ fn cmd_create_blockchain(address: &str) -> Result<()> {
 
 fn cmd_get_balance(address: &str) -> Result<i32> {
     let pub_key_hash = Address::decode(address).unwrap().body;
-    let bc = Blockchain::new()?;
+    let bc = Blockchain::load()?;
     let utxo_set = UTXOSet { blockchain: bc };
     let utxos = utxo_set.find_UTXO(&pub_key_hash)?;
 
@@ -330,7 +348,7 @@ fn cmd_get_balance(address: &str) -> Result<i32> {
 }
 
 fn cmd_chain() -> Result<()> {
-    let bc = Blockchain::new()?;
+    let bc = Blockchain::load()?;
     for b in bc.iter() {
         println!("{:#?}", b);
     }

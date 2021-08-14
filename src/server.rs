@@ -61,7 +61,7 @@ struct Versionmsg {
     from_ip: String,
     version: i32,
     //current height of the blockchain
-    best_height: i32,
+    best_height: u128,
     //total wins included by current blockchain
     wins: u128,
 }
@@ -113,7 +113,7 @@ impl Server {
         thread::spawn(move || {
             thread::sleep(Duration::from_millis(1000));
             //if server1 has not any existing blockchain yet
-            if server1.get_best_height()? == -1 {
+            if server1.get_best_height()? == u128::MAX {
                 server1.request_blocks()
             } else {
                 server1.send_version(CENTRAL_NODE)
@@ -192,7 +192,7 @@ impl Server {
         self.inner.lock().unwrap().mempool.clear()
     }
 
-    fn get_best_height(&self) -> Result<i32> {
+    fn get_best_height(&self) -> Result<u128> {
         self.inner.lock().unwrap().utxo.blockchain.get_best_height()
     }
 
@@ -227,7 +227,7 @@ impl Server {
     }
 
     fn mine_block(&self, txs: Vec<Transaction>) -> Result<Block> {
-        self.inner.lock().unwrap().utxo.blockchain.challenge_last_block(txs)
+        self.inner.lock().unwrap().utxo.blockchain.mine_block(txs)
     }
 
     fn utxo_reindex(&self) -> Result<()> {
@@ -574,7 +574,7 @@ mod test {
     fn test_cmd() {
         let mut agent = Agent::new(build).unwrap();
         let wa1 = agent.generate_address();
-        let bc = Blockchain::recreate_blockchain(wa1).unwrap();
+        let bc = Blockchain::init(wa1).unwrap();
         let utxo_set = UTXOSet { blockchain: bc };
         let server = Server::new("7878", "localhost:3001", utxo_set).unwrap();
 

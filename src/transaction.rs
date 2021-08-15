@@ -46,13 +46,12 @@ pub struct Transaction {
     pub vin: Vec<TXInput>,
     pub vout: Vec<TXOutput>,
     pub sender_build : Build,
-    pub chain_height : i32,
 }
 
 impl Transaction {
     /// NewUTXOTransaction creates a new transaction
     /// to is address
-    pub fn send(keypair: &Keypair, to_address: &str, amount: i32, utxo: &UTXOSet) -> Result<Transaction> {
+    pub fn send(keypair: &Keypair, to_address: &str, amount: i32, utxo: &UTXOSet, sender_build:Build) -> Result<Transaction> {
         info!(
             "new Transaction from: {} to: {}",
             keypair.address(),
@@ -94,6 +93,7 @@ impl Transaction {
             id: String::new(),
             vin,
             vout,
+            sender_build,
         };
         tx.id = tx.hash()?;
         utxo.blockchain
@@ -113,6 +113,8 @@ impl Transaction {
         let mut pub_key = Vec::from(data.as_bytes());
         pub_key.append(&mut Vec::from(key));
 
+        
+        let coinbase_build = Build::new("Pok Coinbase Mage".to_owned(), "Mage".to_owned(), "Wand".to_owned());
         let mut tx = Transaction {
             id: String::new(),
             vin: vec![TXInput {
@@ -122,6 +124,7 @@ impl Transaction {
                 pub_key,
             }],
             vout: vec![TXOutput::new(SUBSIDY, to)?],
+            sender_build:coinbase_build,
         };
         tx.id = tx.hash()?;
         Ok(tx)
@@ -235,6 +238,7 @@ impl Transaction {
             id: self.id.clone(),
             vin,
             vout,
+            sender_build:self.sender_build.clone(),
         }
     }
 }
@@ -266,12 +270,14 @@ impl TXOutput {
 mod test {
     use super::*;
 
+    const build:Build = Build::new("Tim".to_owned(),"Warrior".to_owned(),"Sword".to_owned());
+
     #[test]
     fn test_signature() {
-        let mut agent = Agent::new(None).unwrap();;
+        let mut agent = Agent::new(build,"test").unwrap();
         let addr1 = agent.generate_address();
         let k1 = agent.get_keypair_by_address(&addr1).unwrap().clone();
-        agent.save().unwrap();
+        agent.save("test").unwrap();
         drop(agent);
 
         let data = String::from("test");

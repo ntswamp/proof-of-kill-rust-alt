@@ -76,10 +76,12 @@ pub fn hash_public_key(pub_key: &mut Vec<u8>) {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Build {
     name: String,
-    health: i32,
     class: String,
     weapon: String,
+    
+    health: i32,
     attack: i32,
+    action: i32,
 }
 impl Build {
     pub fn new(name: String, class: String, weapon:String) -> Self {
@@ -96,13 +98,79 @@ impl Build {
             "Longbow" => 25,
             "Crossbow" => 26,
         };
+        let action = match &*weapon {
+            "Axe" => 20,
+            "Warhammer" => 25,
+            "Wand" => 35,
+            "Sword" => 25,
+            "Longbow" => 55,
+            "Crossbow" => 40,
+        };
         Build {
             name,
-            health,
             class,
             weapon,
+            health,
             attack,
+            action,
         }
+    }
+    pub fn introduce(&self) {
+        println!("introduce {}:\nthe {} with a(n) {}.", self.name,self.class,self.weapon);
+    }
+
+    pub fn report_health(&self) {
+        match self.health {
+            health if health >= 80 => println!("{} is pretty healthy.",self.name),
+            health if health < 80 && health >= 60 => println!("{} is slightly injured.",self.name),
+            health if health < 60 && health >= 40 => println!("{} is wounded.",self.name),
+            health if health < 40 && health >= 20 => println!("{} is badly hurt.",self.name),
+            health if health < 20 => println!("{} is nearly died.",self.name),
+        }
+    }
+
+    pub fn current_health(&self) -> i32 {
+        if self.health <= 0 {
+            self.die();
+        }
+        self.health
+    }
+
+    pub fn current_action(&self) -> i32 {
+        self.action
+    }
+
+    pub fn produce_damage(&mut self, randomness: i32) -> i32 {
+        self.action = self.action - 2;
+        if self.action < 0 {
+            self.action = 0;
+            return 0;
+        }
+        
+        let damage = self.attack + (randomness as f32 * 0.8) as i32;
+        println!("{} deals {} damage to opponent agent.", self.name, damage);
+        damage
+    }
+
+    pub fn take_damage(&mut self, damage: i32) {
+        println!("{} took {} damage from opponent agent. Ooouch!", self.name, damage);
+        self.health = self.health - damage;
+    }
+
+/*
+    fn regenerate(&mut self) {
+        self.point.health = self.point.health + self.quality.toughness;
+        self.point.action = self.point.action + self.quality.agility;
+        if self.point.health > self.point.health_max {
+            self.point.health = self.point.health_max;
+        }
+        if self.point.action > self.point.action_max {
+            self.point.action = self.point.action_max;
+        }
+    }
+*/
+    fn die(&self) {
+        println!("{} is died, game over.", self.name);
     }
 }
 

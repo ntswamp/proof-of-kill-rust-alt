@@ -572,9 +572,9 @@ mod test {
 
     #[test]
     fn test_cmd() {
-        let mut agent = Agent::new(build).unwrap();
+        let mut agent = Agent::new(build,"test").unwrap();
         let wa1 = agent.generate_address();
-        let bc = Blockchain::init(wa1).unwrap();
+        let bc = Blockchain::init(wa1,"test").unwrap();
         let utxo_set = UTXOSet { blockchain: bc };
         let server = Server::new("7878", "localhost:3001", utxo_set).unwrap();
 

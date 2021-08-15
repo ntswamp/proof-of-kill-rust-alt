@@ -8,6 +8,7 @@ use merkle_cbt::merkle_tree::Merge;
 use merkle_cbt::merkle_tree::CBMT;
 use serde::{Deserialize, Serialize};
 use std::time::SystemTime;
+use rand::Rng;
 
 const TARGET_HEXS: usize = 4;
 const CHANCE:u32 = 100;
@@ -32,8 +33,8 @@ pub struct Block{
     chance: u32,
     wins:u32,
     //current champion of this Block
-    champion_id: String,
-    champion_build: Build,
+    agent_id: String,
+    agent_build: Build,
 }
 
 impl Block {
@@ -70,8 +71,8 @@ impl Block {
             height,
             chance:CHANCE,
             wins : 0,
-            champion_id: agent.get_id().to_owned(),
-            champion_build: agent.get_build().to_owned(),
+            agent_id: agent.get_id().to_owned(),
+            agent_build: agent.get_build().to_owned(),
         };
         //this should be replaced by a function which fill champion data
         block.dogfight()?;
@@ -83,12 +84,12 @@ impl Block {
         info!("dogfight to the block");
         for tx in &self.transactions {
             //do tx.sender_build vs own build
-        }
-        while self.chance != 0  {
-            if self.won()? {
-                self.wins += 1;
+            while self.chance != 0  {
+                if self.won(&mut tx.sender_build,None) {
+                    self.wins += 1;
+                }
+                self.chance -= 1;
             }
-            self.chance -= 1;
         }
         let data = self.prepare_hash_data()?;
         let mut hasher = Sha256::new();
@@ -99,8 +100,10 @@ impl Block {
 
     /// NewGenesisBlock creates and returns genesis Block
     pub fn new_genesis_block(coinbase: Transaction) -> Block {
+        let node_id =  std::env::var("NODE_ID").unwrap();
+        let agent_path = "data_".to_owned() + &node_id + "/agent";
         let genesis_build: Build = Build::new("Culty".to_owned(),"Warrior".to_owned(),"Warhammer".to_owned());
-        let genesis_agent = Agent::new(genesis_build).unwrap();
+        let genesis_agent = Agent::new(genesis_build,&agent_path).unwrap();
 
         Block::new_block(vec![coinbase], String::new(), 0,&genesis_agent).unwrap()
     }
@@ -129,13 +132,51 @@ impl Block {
     }
 
     /// won() return true if won the duel.
-    fn won(&self) -> Result<bool> {
-        let data = self.prepare_hash_data()?;
-        let mut hasher = Sha256::new();
-        hasher.input(&data[..]);
-        let mut vec1: Vec<u8> = Vec::new();
-        vec1.resize(TARGET_HEXS, '0' as u8);
-        Ok(&hasher.result_str()[0..TARGET_HEXS] == String::from_utf8(vec1)?)
+    fn won(&self, opponent: &mut Build,random_seed:Option<Vec<i32>>) -> bool {
+        match random_seed {
+            None => {
+                let mut random_seed : Vec<i32> = vec![];
+    
+                let mut rng = rand::thread_rng();
+                while self.agent_build.current_health() > 0 && opponent.current_health() > 0 {
+                    //-5 ~ 5 inclusively
+                    let randomness:i32 = rng.gen_range(-5..=5);
+                    random_seed.push(randomness);
+                    //decide the first-mover
+                    if self.agent_build.current_action() > opponent.current_action() {
+                        opponent.take_damage(self.agent_build.produce_damage(randomness));
+                        self.agent_build.take_damage(opponent.produce_damage(randomness));
+                    } else {
+                        self.agent_build.take_damage(opponent.produce_damage(randomness));
+                        opponent.take_damage(self.agent_build.produce_damage(randomness));
+                    }
+                    //self.agent_build.regenerate();
+                    //opponent.regenerate();
+    
+                    self.agent_build.report_health();
+                    opponent.report_health();
+                }
+                return self.agent_build.current_health() > 0;
+            },
+            Some(random_seed) => {
+                for randomness in &random_seed{
+                    if self.agent_build.current_action() > opponent.current_action() {
+                        opponent.take_damage(self.agent_build.produce_damage(*randomness));
+                        self.agent_build.take_damage(opponent.produce_damage(*randomness));
+                } else {
+                        self.agent_build.take_damage(opponent.produce_damage(*randomness));
+                        opponent.take_damage(self.agent_build.produce_damage(*randomness));
+                }
+                //self.agent_build.regenerate();
+                //opponent.regenerate();
+    
+                self.agent_build.report_health();
+                opponent.report_health();
+                }
+                return self.agent_build.current_health() > 0;
+            },
+        }
+
     }
 }
 

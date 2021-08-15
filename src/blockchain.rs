@@ -6,7 +6,6 @@ use failure::format_err;
 use sled;
 use std::collections::HashMap;
 use crate::agent::*;
-use std::env;
 
 
 const GENESIS_COINBASE_DATA: &str = "18:29, August 3rd, 2021, Tokyo. The sunset is beautiful.";
@@ -111,7 +110,7 @@ impl Blockchain {
 
         
         let last_hash = self.db.get("LAST")?.unwrap();
-        let node_id =  env::var("NODE_ID").unwrap();
+        let node_id =  std::env::var("NODE_ID").unwrap();
         let agent = Agent::load(&node_id).unwrap();
 
         //this will start dogfight() to each of transaction with own agent.

@@ -58,7 +58,7 @@ impl Blockchain {
         //e.g., data/chain_3000
         let db_path = "data_".to_owned() + node_id + "/chain";
         if !db_exist(&db_path) {
-            return Err(format_err!("ERROR: No Existing Blockchain Found. Create One First."));
+            return Err(format_err!("blockchain database is not initialized.\nuse command `initdb` to initialize one."));
         }
 
         info!("Blockchain Database is Found. Loading...");

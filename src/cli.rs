@@ -57,7 +57,7 @@ impl Cli {
                         "<address> 'The address to get balance for'",
                     )),
             )
-            .subcommand(App::new("createblockchain").about("create blockchain").arg(
+            .subcommand(App::new("initdb").about("initialize blockchain database").arg(
                 Arg::from_usage("<address> 'The address to send genesis block reward to'"),
             ))
             .subcommand(
@@ -89,7 +89,7 @@ impl Cli {
             println!("Done! There are {} transactions in the UTXO set.", count);
         } else if let Some(_) = matches.subcommand_matches("address") {
             cmd_address()?;
-        } else if let Some(ref matches) = matches.subcommand_matches("createblockchain") {
+        } else if let Some(ref matches) = matches.subcommand_matches("initdb") {
             if let Some(address) = matches.value_of("address") {
                 cmd_create_blockchain(address)?;
             }

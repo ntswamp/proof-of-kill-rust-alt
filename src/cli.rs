@@ -91,7 +91,7 @@ impl Cli {
             cmd_address()?;
         } else if let Some(ref matches) = matches.subcommand_matches("initdb") {
             if let Some(address) = matches.value_of("address") {
-                cmd_create_blockchain(address)?;
+                cmd_init_db(address)?;
             }
         } else if let Some(ref matches) = matches.subcommand_matches("send") {
             let from = if let Some(address) = matches.value_of("from") {
@@ -338,7 +338,7 @@ fn cmd_reindex() -> Result<i32> {
     utxo_set.count_transactions()
 }
 
-fn cmd_create_blockchain(address: &str) -> Result<()> {
+fn cmd_init_db(address: &str) -> Result<()> {
     let node_id = env::var("NODE_ID").unwrap();
     let address = String::from(address);
     let bc = Blockchain::init(address,&node_id)?;
@@ -391,7 +391,7 @@ mod test {
     fn test_locally() {
         let addr1 = cmd_newagent().unwrap();
         let addr2 = cmd_newagent().unwrap();
-        cmd_create_blockchain(&addr1).unwrap();
+        cmd_init_db(&addr1).unwrap();
 
         let b1 = cmd_get_balance(&addr1).unwrap();
         let b2 = cmd_get_balance(&addr2).unwrap();

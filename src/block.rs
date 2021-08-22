@@ -82,10 +82,11 @@ impl Block {
     /// Run performs a proof-of-work
     fn dogfight(&mut self) -> Result<()> {
         info!("dogfight to the block");
-        for tx in &self.transactions {
+        let transactions = self.transactions.clone();
+        for tx in transactions {
             //do tx.sender_build vs own build
             while self.chance != 0  {
-                if self.won(&mut tx.sender_build,None) {
+                if self.won(&mut tx.sender_build.clone(),None) {
                     self.wins += 1;
                 }
                 self.chance -= 1;
@@ -132,7 +133,7 @@ impl Block {
     }
 
     /// won() return true if won the duel.
-    fn won(&self, opponent: &mut Build,random_seed:Option<Vec<i32>>) -> bool {
+    fn won(&mut self, opponent: &mut Build,random_seed:Option<Vec<i32>>) -> bool {
         match random_seed {
             None => {
                 let mut random_seed : Vec<i32> = vec![];

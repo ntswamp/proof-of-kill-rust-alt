@@ -25,7 +25,7 @@ impl Cli {
         let node_id = match env::var("NODE_ID") {
             Ok(id) => id,
             Err(err) => {
-                println!("environment variable 'NODE_ID' is not set properly.\nuse 'export NODE_ID=xxxx' to set\n{:?}",err);
+                println!("environment variable 'NODE_ID' should be set properly.\nuse 'export NODE_ID=xxxx' to set\n{:?}",err);
                 panic!() 
             },
         };
@@ -35,7 +35,7 @@ impl Cli {
             .author("ntswamp <nterheoid@gmail.com>")
             .about("a demonstration of PoK(Proof-of-Kill) consensus model")
             .subcommand(App::new("chain").about("print out current state of blockchain"))
-            .subcommand(App::new("newagent").about("(re)create an agent to collect coin for you"))
+            .subcommand(App::new("newagent").about("(re)create an agent to start collecting coins!"))
             .subcommand(App::new("agent").about("show agent stats"))
             .subcommand(App::new("address").about("list all addresses held by your agent"))
             .subcommand(App::new("reindex").about("reindex UTXO"))
@@ -117,7 +117,7 @@ impl Cli {
         } else if let Some(ref matches) = matches.subcommand_matches("startnode") {
             if let Some(port) = matches.value_of("port") {
                 println!("Start node...");
-                let bc = Blockchain::load()?;
+                let bc = Blockchain::load(&node_id)?;
                 let utxo_set = UTXOSet { blockchain: bc };
                 let server = Server::new(port, "", utxo_set)?;
                 server.start_server()?;
@@ -136,7 +136,7 @@ impl Cli {
                 exit(1)
             };
             println!("Start miner node...");
-            let bc = Blockchain::load()?;
+            let bc = Blockchain::load(&node_id)?;
             let utxo_set = UTXOSet { blockchain: bc };
             let server = Server::new(port, address, utxo_set)?;
             server.start_server()?;
@@ -147,11 +147,12 @@ impl Cli {
 }
 
 fn cmd_send(from: &str, to: &str, amount: i32, mine_now: bool) -> Result<()> {
-    let bc = Blockchain::load()?;
+    let node_id = env::var("NODE_ID").unwrap();
+    let bc = Blockchain::load(&node_id)?;
     let mut utxo_set = UTXOSet { blockchain: bc };
-    let agent = Agent::new(None).unwrap();
+    let agent = Agent::load(&node_id).unwrap();
     let from_keypair = agent.get_keypair_by_address(from).unwrap();
-    let tx = Transaction::send(from_keypair, to, amount, &utxo_set)?;
+    let tx = Transaction::send(from_keypair, to, amount, &utxo_set,agent.get_build().clone())?;
     if mine_now {
         let cbtx = Transaction::new_coinbase(from.to_string(), String::from("reward!"))?;
         let new_block = utxo_set.blockchain.mine_block(vec![cbtx, tx])?;
@@ -166,6 +167,7 @@ fn cmd_send(from: &str, to: &str, amount: i32, mine_now: bool) -> Result<()> {
 }
 
 fn cmd_newagent() -> Result<String> {
+    let node_id = env::var("NODE_ID").unwrap();
 
     let mut yesno = String::new();
     io::stdin()
@@ -306,9 +308,9 @@ fn cmd_newagent() -> Result<String> {
         
         let build = Build::new(name,class,weapon);
 
-        let mut agent = Agent::new(build).unwrap();
+        let mut agent = Agent::new(build,&node_id).unwrap();
         let address = agent.generate_address();
-        agent.save()?;
+        agent.save(&node_id)?;
 
         println!("Congratulation, you made a wise choice.");
         println!("Use Command `agent` to greet your agent.");
@@ -318,15 +320,17 @@ fn cmd_newagent() -> Result<String> {
 }
 
 fn cmd_reindex() -> Result<i32> {
-    let bc = Blockchain::load()?;
+    let node_id = env::var("NODE_ID").unwrap();
+    let bc = Blockchain::load(&node_id)?;
     let utxo_set = UTXOSet { blockchain: bc };
     utxo_set.reindex()?;
     utxo_set.count_transactions()
 }
 
 fn cmd_create_blockchain(address: &str) -> Result<()> {
+    let node_id = env::var("NODE_ID").unwrap();
     let address = String::from(address);
-    let bc = Blockchain::init(address)?;
+    let bc = Blockchain::init(address,&node_id)?;
 
     let utxo_set = UTXOSet { blockchain: bc };
     utxo_set.reindex()?;
@@ -335,8 +339,9 @@ fn cmd_create_blockchain(address: &str) -> Result<()> {
 }
 
 fn cmd_get_balance(address: &str) -> Result<i32> {
+    let node_id = env::var("NODE_ID").unwrap();
     let pub_key_hash = Address::decode(address).unwrap().body;
-    let bc = Blockchain::load()?;
+    let bc = Blockchain::load(&node_id)?;
     let utxo_set = UTXOSet { blockchain: bc };
     let utxos = utxo_set.find_UTXO(&pub_key_hash)?;
 
@@ -348,7 +353,8 @@ fn cmd_get_balance(address: &str) -> Result<i32> {
 }
 
 fn cmd_chain() -> Result<()> {
-    let bc = Blockchain::load()?;
+    let node_id = env::var("NODE_ID").unwrap();
+    let bc = Blockchain::load(&node_id)?;
     for b in bc.iter() {
         println!("{:#?}", b);
     }
@@ -356,7 +362,8 @@ fn cmd_chain() -> Result<()> {
 }
 
 fn cmd_address() -> Result<()> {
-    let agent = Agent::new(None).unwrap();
+    let node_id = env::var("NODE_ID").unwrap();
+    let agent = Agent::load(&node_id).unwrap();
     let addresses = agent.get_all_addresses();
     println!("addresses: ");
     for ad in addresses {

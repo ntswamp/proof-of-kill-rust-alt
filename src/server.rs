@@ -568,10 +568,14 @@ mod test {
     use crate::blockchain::*;
     use crate::agent::*;
 
-    const build:Build = Build::new("Tim".to_owned(),"Warrior".to_owned(),"Sword".to_owned());
 
     #[test]
     fn test_cmd() {
+        let build:Build = Build::new (
+            "Tim".to_owned(),
+            "Warrior".to_owned(),
+            "Axe".to_owned(),
+        );
         let mut agent = Agent::new(build,"test").unwrap();
         let wa1 = agent.generate_address();
         let bc = Blockchain::init(wa1,"test").unwrap();

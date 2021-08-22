@@ -89,6 +89,7 @@ impl Build {
             "Warrior" => 100,
             "Mage" => 60,
             "Archer" => 80,
+            _ => 1,
         };
         let attack = match &*weapon {
             "Axe" => 20,
@@ -97,6 +98,7 @@ impl Build {
             "Sword" => 25,
             "Longbow" => 25,
             "Crossbow" => 26,
+            _ => 1,
         };
         let action = match &*weapon {
             "Axe" => 20,
@@ -105,6 +107,7 @@ impl Build {
             "Sword" => 25,
             "Longbow" => 55,
             "Crossbow" => 40,
+            _ => 1,
         };
         Build {
             name,
@@ -126,6 +129,7 @@ impl Build {
             health if health < 60 && health >= 40 => println!("{} is wounded.",self.name),
             health if health < 40 && health >= 20 => println!("{} is badly hurt.",self.name),
             health if health < 20 => println!("{} is nearly died.",self.name),
+            _ => println!("{}'s health is uncertain.",self.name),
         }
     }
 
@@ -290,11 +294,7 @@ pub fn agent_exist(agent_path: &str) -> bool {
 #[cfg(test)]
 mod test {
     use super::*;
-    const build:Build= Build::new (
-        "Tim".to_owned(),
-        "Warrior".to_owned(),
-        "Axe".to_owned(),
-    );
+
 
     #[test]
     fn test_create_keypair_and_hash() {
@@ -312,7 +312,12 @@ mod test {
 
     #[test]
     fn test_agent() {
-        let mut agent1 = Agent::new(build,"test").unwrap();
+        let build:Build = Build::new (
+            "Tim".to_owned(),
+            "Warrior".to_owned(),
+            "Axe".to_owned(),
+        );
+        let mut agent1 = Agent::new(build.clone(),"test").unwrap();
         let addr1 = agent1.generate_address();
         let keypair1 = agent1.get_keypair_by_address(&addr1).unwrap().clone();
         agent1.save("test").unwrap();
@@ -325,6 +330,11 @@ mod test {
     #[test]
     #[should_panic]
     fn test_agent_not_exist() {
+        let build:Build = Build::new (
+            "Tim".to_owned(),
+            "Warrior".to_owned(),
+            "Axe".to_owned(),
+        );
         let k3 = Keypair::new();
         let agent2 = Agent::new(build,"test").unwrap();
         agent2.get_keypair_by_address(&k3.address()).unwrap();

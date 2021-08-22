@@ -270,10 +270,13 @@ impl TXOutput {
 mod test {
     use super::*;
 
-    const build:Build = Build::new("Tim".to_owned(),"Warrior".to_owned(),"Sword".to_owned());
-
     #[test]
     fn test_signature() {
+        let build:Build = Build::new (
+            "Tim".to_owned(),
+            "Warrior".to_owned(),
+            "Axe".to_owned(),
+        );
         let mut agent = Agent::new(build,"test").unwrap();
         let addr1 = agent.generate_address();
         let k1 = agent.get_keypair_by_address(&addr1).unwrap().clone();

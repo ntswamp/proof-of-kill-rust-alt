@@ -275,7 +275,7 @@ impl Agent {
     pub fn load(node_id:&str) -> Result<Agent> {
         let agent_path = "data_".to_owned() + node_id + "/agent";
         if !agent_exist(&agent_path) {
-            return Err(format_err!("ERROR: No Existing Agent Found. Create One First."));
+            return Err(format_err!("No Existing Agent Found. Create One First."));
         }
 
         let db = sled::open(agent_path)?;

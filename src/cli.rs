@@ -79,7 +79,10 @@ impl Cli {
             }
         } else if let Some(_) = matches.subcommand_matches("newagent") {
             println!("address: {}", cmd_newagent()?);
-        } else if let Some(_) = matches.subcommand_matches("chain") {
+        } else if let Some(_) = matches.subcommand_matches("agent") {
+            cmd_agent()?;
+        }
+         else if let Some(_) = matches.subcommand_matches("chain") {
             cmd_chain()?;
         } else if let Some(_) = matches.subcommand_matches("reindex") {
             let count = cmd_reindex()?;
@@ -316,6 +319,14 @@ fn cmd_newagent() -> Result<String> {
         println!("Use Command `agent` to greet your agent.");
         
         return Ok(address)
+    }
+}
+
+fn cmd_agent()-> Result<()> {
+    let node_id = env::var("NODE_ID").unwrap();
+    match Agent::load(&node_id) {
+        Ok(agent) => return Ok( println!("{:?}",agent.get_build()) ),
+        Err(err) => return Err(err),
     }
 }
 

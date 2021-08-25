@@ -280,7 +280,7 @@ mod test {
         let mut agent = Agent::new(build,"test").unwrap();
         let addr1 = agent.generate_address();
         let k1 = agent.get_keypair_by_address(&addr1).unwrap().clone();
-        agent.save("test").unwrap();
+        agent.save().unwrap();
         drop(agent);
 
         let data = String::from("test");

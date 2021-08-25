@@ -171,15 +171,20 @@ fn cmd_send(from: &str, to: &str, amount: i32, mine_now: bool) -> Result<()> {
 
 fn cmd_newagent() -> Result<String> {
     let node_id = env::var("NODE_ID").unwrap();
+    let agent_path = "data_".to_owned() + &node_id + "/agent";
 
+    println!("this operation will remove current agent. continue?(y/n)");
     let mut yesno = String::new();
     io::stdin()
     .read_line(&mut yesno)
-    .expect("this operation will remove current agent. continue?(y/n)");
+    .expect("please enter y or n");
 
     if yesno.trim() == "n" {
-        return Ok("".to_owned());
+        return Ok("Creation Canceled".to_owned());
     }
+    
+    
+    std::fs::remove_dir_all(&agent_path).ok();
 
     loop {
         let mut name = String::new();
@@ -313,7 +318,7 @@ fn cmd_newagent() -> Result<String> {
 
         let mut agent = Agent::new(build,&node_id).unwrap();
         let address = agent.generate_address();
-        agent.save(&node_id)?;
+        agent.save()?;
 
         println!("Congratulation, you made a wise choice.");
         println!("Use Command `agent` to greet your agent.");
@@ -324,7 +329,12 @@ fn cmd_newagent() -> Result<String> {
 
 fn cmd_agent()-> Result<()> {
     match Agent::load() {
-        Ok(agent) => return Ok( println!("{:?}",agent.get_build()) ),
+        Ok(agent) => {
+            println!("agent name: {:?}", agent.get_build().name);
+            println!("agent class: {:?}", agent.get_build().class);
+            println!("agent's weapon: {:?}", agent.get_build().weapon);
+            return Ok(());
+        },
         Err(err) => return Err(err),
     }
 }

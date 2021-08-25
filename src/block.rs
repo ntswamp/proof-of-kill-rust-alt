@@ -59,7 +59,8 @@ impl Block {
     }
 
     /// NewBlock creates and returns Block
-    pub fn new_block(transactions: Vec<Transaction>, prev_block_hash: String,height: u128,agent:&Agent) -> Result<Block> {
+    pub fn new_block(transactions: Vec<Transaction>, prev_block_hash: String,height: u128) -> Result<Block> {
+        let agent = Agent::load().unwrap();
         let timestamp = SystemTime::now()
             .duration_since(SystemTime::UNIX_EPOCH)?
             .as_millis();
@@ -71,11 +72,13 @@ impl Block {
             height,
             chance:CHANCE,
             wins : 0,
-            agent_id: agent.get_id().to_owned(),
-            agent_build: agent.get_build().to_owned(),
+            agent_id: "none".to_owned(),
+            agent_build: agent.get_build().clone(),
         };
         //this should be replaced by a function which fill champion data
         block.dogfight()?;
+        block.agent_id = agent.get_id().to_owned();
+        block.agent_build = agent.get_build().to_owned();
         Ok(block)
     }
 
@@ -101,8 +104,7 @@ impl Block {
 
     /// NewGenesisBlock creates and returns genesis Block
     pub fn new_genesis_block(coinbase: Transaction) -> Block {
-        let genesis_agent = Agent::load().unwrap();
-        Block::new_block(vec![coinbase], String::new(), 0,&genesis_agent).unwrap()
+        Block::new_block(vec![coinbase], String::new(), 0).unwrap()
     }
 
     /// HashTransactions returns a hash of the transactions in the block

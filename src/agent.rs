@@ -75,9 +75,9 @@ pub fn hash_public_key(pub_key: &mut Vec<u8>) {
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Build {
-    name: String,
-    class: String,
-    weapon: String,
+    pub name: String,
+    pub class: String,
+    pub weapon: String,
     
     health: i32,
     attack: i32,
@@ -219,8 +219,6 @@ impl Agent {
         }
         //drop(db);
         let agent_data = serialize(&agent)?;
-        //remove old agent beforehand
-        db.remove("MYAGENT");
         db.insert("MYAGENT", agent_data);
         Ok(agent)
     }
@@ -258,8 +256,9 @@ impl Agent {
     }
 
     /// save agent to the disk
-    pub fn save(&self,node_id:&str) -> Result<()> {
-        let agent_path = "data_".to_owned() + node_id + "/agent";
+    pub fn save(&self) -> Result<()> {
+        let node_id = std::env::var("NODE_ID").unwrap();
+        let agent_path = "data_".to_owned() + &node_id + "/agent";
         let db = sled::open(agent_path)?;
 
         for (address, keypair) in &self.addresses {
@@ -321,7 +320,7 @@ mod test {
         let mut agent1 = Agent::new(build.clone(),"test").unwrap();
         let addr1 = agent1.generate_address();
         let keypair1 = agent1.get_keypair_by_address(&addr1).unwrap().clone();
-        agent1.save("test").unwrap();
+        agent1.save().unwrap();
 
         let agent2=  Agent::new(build,"test").unwrap();
         let keypair2 = agent2.get_keypair_by_address(&addr1).unwrap();

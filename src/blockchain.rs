@@ -110,14 +110,12 @@ impl Blockchain {
 
         
         let last_hash = self.db.get("LAST")?.unwrap();
-        let agent = Agent::load().unwrap();
 
         //this will start dogfight() to each of transaction with own agent.
         let newblock = Block::new_block(
             transactions,
             String::from_utf8(last_hash.to_vec())?,
             self.get_best_height()? + 1,
-            &agent,
         )?;
         self.db.insert(newblock.get_hash(), serialize(&newblock)?)?;
         self.db.insert("LAST", newblock.get_hash().as_bytes())?;

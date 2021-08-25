@@ -114,7 +114,7 @@ impl Transaction {
         pub_key.append(&mut Vec::from(key));
 
         
-        let coinbase_build = Agent::load().unwrap().get_build().clone();
+        let coinbase_build = Build::new("PoK Wizard".to_owned(),"Mage".to_owned(),"Wand".to_owned(),);
         let mut tx = Transaction {
             id: String::new(),
             vin: vec![TXInput {

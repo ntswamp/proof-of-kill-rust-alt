@@ -23,7 +23,10 @@ impl UTXOSet {
         let mut unspent_outputs: HashMap<String, Vec<i32>> = HashMap::new();
         let mut accumulated = 0;
 
-        let db = sled::open("data/utxos")?;
+        let node_id =  std::env::var("NODE_ID").unwrap();
+        let utxo_path = "data_".to_owned() + &node_id + "/utxo";
+
+        let db = sled::open(&utxo_path)?;
         for kv in db.iter() {
             let (k, v) = kv?;
             let txid = String::from_utf8(k.to_vec())?;
@@ -50,7 +53,10 @@ impl UTXOSet {
         let mut utxos = TXOutputs {
             outputs: Vec::new(),
         };
-        let db = sled::open("data/utxos")?;
+        let node_id =  std::env::var("NODE_ID").unwrap();
+        let utxo_path = "data_".to_owned() + &node_id + "/utxo";
+        
+        let db = sled::open(&utxo_path)?;
 
         for kv in db.iter() {
             let (_, v) = kv?;
@@ -69,7 +75,10 @@ impl UTXOSet {
     /// CountTransactions returns the number of transactions in the UTXO set
     pub fn count_transactions(&self) -> Result<i32> {
         let mut counter = 0;
-        let db = sled::open("data/utxos")?;
+
+        let node_id =  std::env::var("NODE_ID").unwrap();
+        let utxo_path = "data_".to_owned() + &node_id + "/utxo";
+        let db = sled::open(utxo_path)?;
         for kv in db.iter() {
             kv?;
             counter += 1;
@@ -79,8 +88,10 @@ impl UTXOSet {
 
     /// Reindex rebuilds the UTXO set
     pub fn reindex(&self) -> Result<()> {
-        std::fs::remove_dir_all("data/utxos").ok();
-        let db = sled::open("data/utxos")?;
+        let node_id =  std::env::var("NODE_ID").unwrap();
+        let utxo_path = "data_".to_owned() + &node_id + "/utxo";
+        std::fs::remove_dir_all(&utxo_path).ok();
+        let db = sled::open(&utxo_path)?;
 
         let utxos = self.blockchain.find_UTXO();
 
@@ -95,7 +106,9 @@ impl UTXOSet {
     ///
     /// The Block is considered to be the tip of a blockchain
     pub fn update(&self, block: &Block) -> Result<()> {
-        let db = sled::open("data/utxos")?;
+        let node_id =  std::env::var("NODE_ID").unwrap();
+        let utxo_path = "data_".to_owned() + &node_id + "/utxo";
+        let db = sled::open(utxo_path)?;
 
         for tx in block.get_transaction() {
             if !tx.is_coinbase() {

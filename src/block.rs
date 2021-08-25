@@ -101,11 +101,7 @@ impl Block {
 
     /// NewGenesisBlock creates and returns genesis Block
     pub fn new_genesis_block(coinbase: Transaction) -> Block {
-        let node_id =  std::env::var("NODE_ID").unwrap();
-        let agent_path = "data_".to_owned() + &node_id + "/agent";
-        let genesis_build: Build = Build::new("Culty".to_owned(),"Warrior".to_owned(),"Warhammer".to_owned());
-        let genesis_agent = Agent::new(genesis_build,&agent_path).unwrap();
-
+        let genesis_agent = Agent::load().unwrap();
         Block::new_block(vec![coinbase], String::new(), 0,&genesis_agent).unwrap()
     }
 

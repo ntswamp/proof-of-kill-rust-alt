@@ -272,8 +272,9 @@ impl Agent {
         Ok(())
     }
 
-    pub fn load(node_id:&str) -> Result<Agent> {
-        let agent_path = "data_".to_owned() + node_id + "/agent";
+    pub fn load() -> Result<Agent> {
+        let node_id =  std::env::var("NODE_ID").unwrap();
+        let agent_path = "data_".to_owned() + &node_id + "/agent";
         if !agent_exist(&agent_path) {
             return Err(format_err!("No Existing Agent Found. Create One First."));
         }

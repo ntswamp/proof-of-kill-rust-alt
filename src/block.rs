@@ -75,7 +75,6 @@ impl Block {
             agent_id: "none".to_owned(),
             agent_build: agent.get_build().clone(),
         };
-        //this should be replaced by a function which fill champion data
         block.dogfight()?;
         block.agent_id = agent.get_id().to_owned();
         block.agent_build = agent.get_build().to_owned();
@@ -87,9 +86,9 @@ impl Block {
         info!("dogfight to the block");
         let transactions = self.transactions.clone();
         for tx in transactions {
-            //do tx.sender_build vs own build
             while self.chance != 0  {
-                if self.won(&mut tx.sender_build.clone(),None) {
+                let mut my_build = Agent::load().unwrap().get_build().clone();
+                if Block::won(&mut my_build,&mut tx.sender_build.clone(),None) {
                     self.wins += 1;
                 }
                 self.chance -= 1;
@@ -131,48 +130,50 @@ impl Block {
     }
 
     /// won() return true if won the duel.
-    fn won(&mut self, opponent: &mut Build,random_seed:Option<Vec<i32>>) -> bool {
+    fn won(myself: &mut Build, opponent: &mut Build,random_seed:Option<Vec<i32>>) -> bool {
         match random_seed {
             None => {
                 let mut random_seed : Vec<i32> = vec![];
     
                 let mut rng = rand::thread_rng();
-                while self.agent_build.current_health() > 0 && opponent.current_health() > 0 {
+                while myself.current_health() > 0 && opponent.current_health() > 0 {
                     //-5 ~ 5 inclusively
                     let randomness:i32 = rng.gen_range(-5..=5);
                     random_seed.push(randomness);
                     //decide the first-mover
-                    if self.agent_build.current_action() > opponent.current_action() {
-                        opponent.take_damage(self.agent_build.produce_damage(randomness));
-                        self.agent_build.take_damage(opponent.produce_damage(randomness));
+                    if myself.current_action() > opponent.current_action() {
+                        opponent.take_damage(myself.produce_damage(randomness));
+                        myself.take_damage(opponent.produce_damage(randomness));
                     } else {
-                        self.agent_build.take_damage(opponent.produce_damage(randomness));
-                        opponent.take_damage(self.agent_build.produce_damage(randomness));
+                        myself.take_damage(opponent.produce_damage(randomness));
+                        opponent.take_damage(myself.produce_damage(randomness));
                     }
                     //self.agent_build.regenerate();
                     //opponent.regenerate();
     
-                    self.agent_build.report_health();
+                    myself.report_health();
                     opponent.report_health();
                 }
-                return self.agent_build.current_health() > 0;
+                return myself.current_health() > 0;
             },
             Some(random_seed) => {
+                //unimplemented
                 for randomness in &random_seed{
-                    if self.agent_build.current_action() > opponent.current_action() {
-                        opponent.take_damage(self.agent_build.produce_damage(*randomness));
-                        self.agent_build.take_damage(opponent.produce_damage(*randomness));
+                    if myself.current_action() > opponent.current_action() {
+                        opponent.take_damage(myself.produce_damage(*randomness));
+                        myself.take_damage(opponent.produce_damage(*randomness));
                 } else {
-                        self.agent_build.take_damage(opponent.produce_damage(*randomness));
-                        opponent.take_damage(self.agent_build.produce_damage(*randomness));
+                    myself.take_damage(opponent.produce_damage(*randomness));
+                        opponent.take_damage(myself.produce_damage(*randomness));
                 }
-                //self.agent_build.regenerate();
+                //myself.regenerate();
                 //opponent.regenerate();
     
-                self.agent_build.report_health();
+                myself.report_health();
                 opponent.report_health();
                 }
-                return self.agent_build.current_health() > 0;
+                return myself.current_health() > 0;
+                
             },
         }
 

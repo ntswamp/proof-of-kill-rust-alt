@@ -94,7 +94,7 @@ impl Build {
         let attack = match &*weapon {
             "Axe" => 20,
             "Warhammer" => 15,
-            "Wand" => 35,
+            "Wand" => 28,
             "Sword" => 25,
             "Longbow" => 25,
             "Crossbow" => 26,
@@ -145,9 +145,8 @@ impl Build {
     }
 
     pub fn produce_damage(&mut self, randomness: i32) -> i32 {
-        self.action = self.action - 2;
+        self.action = self.action + randomness;
         if self.action < 0 {
-            self.action = 0;
             return 0;
         }
         

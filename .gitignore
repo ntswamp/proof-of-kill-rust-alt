@@ -10,4 +10,4 @@ Cargo.lock
 **/*.rs.bk
 
 # Blockchain
-/data_*/
+/data_3000/

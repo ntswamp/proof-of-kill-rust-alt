@@ -15,7 +15,7 @@ const GENESIS_COINBASE_DATA: &str = "18:29, August 3rd, 2021, Tokyo. The sunset 
 pub struct Blockchain {
     pub tip: String,
     pub db: sled::Db,
-    pub wins: u128,
+    pub kills: u128,
 }
 
 /// BlockchainIterator is used to iterate over blockchain blocks
@@ -47,7 +47,7 @@ impl Blockchain {
         let bc = Blockchain {
             tip: genesis.get_hash(),
             db,
-            wins:0,
+            kills:0,
         };
         bc.db.flush()?;
         Ok(bc)
@@ -74,8 +74,8 @@ impl Blockchain {
             String::from_utf8(hash.to_vec())?
         };
         info!("Loaded.");
-        //**********TODO: wins is not 0***************
-        Ok(Blockchain { tip: lasthash, db, wins:0 })
+        //**********TODO: kills is not 0***************
+        Ok(Blockchain { tip: lasthash, db, kills:0 })
     }
 
      /// Saves the block into the blockchain
@@ -91,7 +91,7 @@ impl Blockchain {
         if block.get_height() > lastheight {
             self.db.insert("LAST", block.get_hash().as_bytes())?;
             self.tip = block.get_hash();
-            self.wins = self.wins + block.get_wins() as u128;
+            self.kills = self.kills + block.get_kills() as u128;
             self.db.flush()?;
         }
         Ok(())
@@ -237,8 +237,8 @@ impl Blockchain {
         Ok(last_block.get_height())
     }
 
-    pub fn get_wins(&self) -> u128 {
-        self.wins
+    pub fn get_kills(&self) -> u128 {
+        self.kills
     }
 
     /// GetBlockHashes returns a list of hashes of all the blocks in the chain

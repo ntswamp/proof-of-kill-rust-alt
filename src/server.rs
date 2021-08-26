@@ -62,8 +62,8 @@ struct Versionmsg {
     version: i32,
     //current height of the blockchain
     best_height: u128,
-    //total wins included by current blockchain
-    wins: u128,
+    //total kills included by current blockchain
+    kills: u128,
 }
 
 pub struct Server {
@@ -196,8 +196,8 @@ impl Server {
         self.inner.lock().unwrap().utxo.blockchain.get_best_height()
     }
 
-    fn get_wins(&self) -> u128 {
-        self.inner.lock().unwrap().utxo.blockchain.get_wins()
+    fn get_kills(&self) -> u128 {
+        self.inner.lock().unwrap().utxo.blockchain.get_kills()
     }
 
     fn get_block_hashs(&self) -> Vec<String> {
@@ -331,7 +331,7 @@ impl Server {
             from_ip: self.node_ip.clone(),
             best_height: self.get_best_height()?,
             version: VERSION,
-            wins: self.get_wins(),
+            kills: self.get_kills(),
         };
         let data = serialize( &(cmd_to_byte("version"), data) )?;
         self.send_data(to_ip, &data)
@@ -349,9 +349,9 @@ impl Server {
         }
         */
         //always picking the most winning version
-        if self.get_wins() < msg.wins {
+        if self.get_kills() < msg.kills {
             self.request_get_blocks(&msg.from_ip)?;
-        } else if self.get_wins() > msg.wins {
+        } else if self.get_kills() > msg.kills {
             self.send_version(&msg.from_ip)?;
         }
 
@@ -586,7 +586,7 @@ mod test {
             from_ip: server.node_ip.clone(),
             best_height: server.get_best_height().unwrap(),
             version: VERSION,
-            wins:server.get_wins(),
+            kills:server.get_kills(),
         };
         let data = serialize(&(cmd_to_byte("version"), vmsg.clone())).unwrap();
         if let Message::Version(v) = byte_to_cmd(&data).unwrap() {

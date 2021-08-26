@@ -31,7 +31,7 @@ pub struct Block{
     height: u128,
     //chance to have fight with transactions
     chance: u32,
-    wins:u32,
+    kills:u32,
     //current champion of this Block
     agent_id: String,
     agent_build: Build,
@@ -42,8 +42,8 @@ impl Block {
         self.hash.clone()
     }
 
-    pub fn get_wins(&self) -> u32 {
-        self.wins
+    pub fn get_kills(&self) -> u32 {
+        self.kills
     }
 
     pub fn get_prev_hash(&self) -> String {
@@ -71,7 +71,7 @@ impl Block {
             hash: String::new(),
             height,
             chance:CHANCE,
-            wins : 0,
+            kills : 0,
             agent_id: "none".to_owned(),
             agent_build: agent.get_build().clone(),
         };
@@ -88,8 +88,8 @@ impl Block {
         for tx in transactions {
             while self.chance != 0  {
                 let mut my_build = Agent::load().unwrap().get_build().clone();
-                if Block::won(&mut my_build,&mut tx.sender_build.clone(),None) {
-                    self.wins += 1;
+                if Block::kill(&mut my_build,&mut tx.sender_build.clone(),None) {
+                    self.kills += 1;
                 }
                 self.chance -= 1;
             }
@@ -129,8 +129,8 @@ impl Block {
         Ok(bytes)
     }
 
-    /// won() return true if won the duel.
-    fn won(myself: &mut Build, opponent: &mut Build,random_seed:Option<Vec<i32>>) -> bool {
+    /// kill() return true if killed the opponent.
+    fn kill(myself: &mut Build, opponent: &mut Build,random_seed:Option<Vec<i32>>) -> bool {
         match random_seed {
             None => {
                 let mut random_seed : Vec<i32> = vec![];

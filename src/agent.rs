@@ -207,7 +207,7 @@ impl Agent {
                     CHARSET[idx] as char
                 })
             .collect();
-        let mut agent = Agent {
+        let agent = Agent {
             addresses : HashMap::<String, Keypair>::new(),
             agent_id : agent_id,
             build : build
@@ -215,7 +215,8 @@ impl Agent {
         let db = sled::open(agent_path)?;
 
         let agent_data = serialize(&agent)?;
-        db.insert("MYAGENT", agent_data);
+        db.insert("MYAGENT", agent_data)?;
+        drop(db);
         Ok(agent)
     }
 

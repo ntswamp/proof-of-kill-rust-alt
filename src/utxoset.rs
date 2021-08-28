@@ -49,7 +49,7 @@ impl UTXOSet {
     }
 
     /// FindUTXO finds UTXO for a public key hash
-    pub fn find_UTXO(&self, pub_key_hash: &[u8]) -> Result<TXOutputs> {
+    pub fn find_utxo(&self, pub_key_hash: &[u8]) -> Result<TXOutputs> {
         let mut utxos = TXOutputs {
             outputs: Vec::new(),
         };
@@ -93,7 +93,7 @@ impl UTXOSet {
         std::fs::remove_dir_all(&utxo_path).ok();
         let db = sled::open(&utxo_path)?;
 
-        let utxos = self.blockchain.find_UTXO();
+        let utxos = self.blockchain.find_utxo();
 
         for (txid, outs) in utxos {
             db.insert(txid.as_bytes(), serialize(&outs)?)?;

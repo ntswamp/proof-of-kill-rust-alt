@@ -416,7 +416,7 @@ impl Transaction {
 ```rs
 impl Blockchain {
     /// FindUTXO finds and returns all unspent transaction outputs
-    pub fn find_UTXO(&self, address: &str) -> Vec<TXOutput> {
+    pub fn find_utxo(&self, address: &str) -> Vec<TXOutput> {
         let mut utxos = Vec::<TXOutput>::new();
         let unspend_TXs = self.find_unspent_transactions(address);
         for tx in unspend_TXs {
@@ -489,7 +489,7 @@ getbalance 命令：
 ```rs
         ...
             let bc = Blockchain::new()?;
-            let utxos = bc.find_UTXO(&address);
+            let utxos = bc.find_utxo(&address);
 
             let mut balance = 0;
             for out in utxos {

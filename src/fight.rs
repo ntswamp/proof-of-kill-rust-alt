@@ -6,9 +6,9 @@
  * so that before having a fight users must go complete one verification in the first place.
  * (turn the "random seed" into a sort of *ticket* for the fight)
 */
-use rand::Rng;
-use serde::{Serialize, Deserialize};
-use crate::agent::*;
+//use rand::Rng;
+//use serde::{Serialize, Deserialize};
+//use crate::agent::*;
 
 /*
 

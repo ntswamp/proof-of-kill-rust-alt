@@ -1,7 +1,8 @@
+/*
 use ring::digest::{Context, SHA256};
 use rand_seeder::{Seeder};
 use rand_pcg::Pcg64;
-use std::io::{BufReader, Read};
+use std::io::{Read};
 
 //produce a random number generator from SHA256 hashes
 fn generator_from_sha256<R: Read>(mut reader: R) -> Result<Pcg64,std::io::Error> {
@@ -42,3 +43,4 @@ mod tests {
         Ok(())
     }
 }
+*/

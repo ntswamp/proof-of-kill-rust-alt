@@ -9,7 +9,6 @@ use ::crypto::digest::Digest;
 use ::crypto::ed25519;
 use ::crypto::sha2::Sha256;
 use failure::format_err;
-use rand::Rng;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use rand::RngCore;
@@ -136,13 +135,13 @@ impl Transaction {
     }
 
     /// Verify verifies signatures of Transaction inputs
-    pub fn verify(&self, prev_TXs: HashMap<String, Transaction>) -> Result<bool> {
+    pub fn verify(&self, prev_txs: HashMap<String, Transaction>) -> Result<bool> {
         if self.is_coinbase() {
             return Ok(true);
         }
 
         for vin in &self.vin {
-            if prev_TXs.get(&vin.txid).unwrap().id.is_empty() {
+            if prev_txs.get(&vin.txid).unwrap().id.is_empty() {
                 return Err(format_err!("ERROR: Previous transaction is not correct"));
             }
         }
@@ -150,9 +149,9 @@ impl Transaction {
         let mut tx_copy = self.trim_copy();
 
         for in_id in 0..self.vin.len() {
-            let prev_Tx = prev_TXs.get(&self.vin[in_id].txid).unwrap();
+            let prev_tx = prev_txs.get(&self.vin[in_id].txid).unwrap();
             tx_copy.vin[in_id].signature.clear();
-            tx_copy.vin[in_id].pub_key = prev_Tx.vout[self.vin[in_id].vout as usize]
+            tx_copy.vin[in_id].pub_key = prev_tx.vout[self.vin[in_id].vout as usize]
                 .pub_key_hash
                 .clone();
             tx_copy.id = tx_copy.hash()?;
@@ -174,14 +173,14 @@ impl Transaction {
     pub fn sign(
         &mut self,
         private_key: &[u8],
-        prev_TXs: HashMap<String, Transaction>,
+        prev_txs: HashMap<String, Transaction>,
     ) -> Result<()> {
         if self.is_coinbase() {
             return Ok(());
         }
 
         for vin in &self.vin {
-            if prev_TXs.get(&vin.txid).unwrap().id.is_empty() {
+            if prev_txs.get(&vin.txid).unwrap().id.is_empty() {
                 return Err(format_err!("ERROR: Previous transaction is not correct"));
             }
         }
@@ -189,9 +188,9 @@ impl Transaction {
         let mut tx_copy = self.trim_copy();
 
         for in_id in 0..tx_copy.vin.len() {
-            let prev_Tx = prev_TXs.get(&tx_copy.vin[in_id].txid).unwrap();
+            let prev_tx = prev_txs.get(&tx_copy.vin[in_id].txid).unwrap();
             tx_copy.vin[in_id].signature.clear();
-            tx_copy.vin[in_id].pub_key = prev_Tx.vout[tx_copy.vin[in_id].vout as usize]
+            tx_copy.vin[in_id].pub_key = prev_tx.vout[tx_copy.vin[in_id].vout as usize]
                 .pub_key_hash
                 .clone();
             tx_copy.id = tx_copy.hash()?;

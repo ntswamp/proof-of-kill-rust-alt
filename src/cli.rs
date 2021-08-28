@@ -379,7 +379,7 @@ fn cmd_get_balance(address: &str) -> Result<i32> {
     };
   
     let utxo_set = UTXOSet { blockchain: bc };
-    let utxos = utxo_set.find_UTXO(&pub_key_hash)?;
+    let utxos = utxo_set.find_utxo(&pub_key_hash)?;
 
     let mut balance = 0;
     for out in utxos.outputs {

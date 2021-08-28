@@ -5,7 +5,6 @@ use bincode::{deserialize, serialize};
 use failure::format_err;
 use sled;
 use std::collections::HashMap;
-use crate::agent::*;
 
 
 const GENESIS_COINBASE_DATA: &str = "18:29, August 3rd, 2021, Tokyo. The sunset is beautiful.";
@@ -134,7 +133,7 @@ impl Blockchain {
     }
 
     /// FindUTXO finds and returns all unspent transaction outputs
-    pub fn find_UTXO(&self) -> HashMap<String, TXOutputs> {
+    pub fn find_utxo(&self) -> HashMap<String, TXOutputs> {
         let mut utxos: HashMap<String, TXOutputs> = HashMap::new();
         let mut spend_txos: HashMap<String, Vec<i32>> = HashMap::new();
 
@@ -192,19 +191,19 @@ impl Blockchain {
         Err(format_err!("Transaction is not found"))
     }
 
-    fn get_prev_TXs(&self, tx: &Transaction) -> Result<HashMap<String, Transaction>> {
-        let mut prev_TXs = HashMap::new();
+    fn get_prev_txs(&self, tx: &Transaction) -> Result<HashMap<String, Transaction>> {
+        let mut prev_txs = HashMap::new();
         for vin in &tx.vin {
-            let prev_TX = self.find_transacton(&vin.txid)?;
-            prev_TXs.insert(prev_TX.id.clone(), prev_TX);
+            let prev_tx = self.find_transacton(&vin.txid)?;
+            prev_txs.insert(prev_tx.id.clone(), prev_tx);
         }
-        Ok(prev_TXs)
+        Ok(prev_txs)
     }
 
     /// SignTransaction signs inputs of a Transaction
     pub fn sign_transacton(&self, tx: &mut Transaction, private_key: &[u8]) -> Result<()> {
-        let prev_TXs = self.get_prev_TXs(tx)?;
-        tx.sign(private_key, prev_TXs)?;
+        let prev_txs = self.get_prev_txs(tx)?;
+        tx.sign(private_key, prev_txs)?;
         Ok(())
     }
 
@@ -213,8 +212,8 @@ impl Blockchain {
         if tx.is_coinbase() {
             return Ok(true);
         }
-        let prev_TXs = self.get_prev_TXs(tx)?;
-        tx.verify(prev_TXs)
+        let prev_txs = self.get_prev_txs(tx)?;
+        tx.verify(prev_txs)
     }
 
     /// GetBlock finds a block by its hash and returns it

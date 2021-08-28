@@ -343,7 +343,9 @@ fn cmd_agent()-> Result<()> {
 
 fn cmd_newaddress() ->Result<()> {
     let mut agent = Agent::load().unwrap();
-    println!("new address generated:{}",agent.generate_address());
+    let address = agent.generate_address();
+    agent.save()?;
+    println!("new address generated:\n{}",&address);
     Ok(())
 }
 

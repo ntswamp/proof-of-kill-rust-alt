@@ -52,7 +52,7 @@ impl Cli {
                     .arg(Arg::from_usage("<address> 'wallet address'")),
             )
             .subcommand(
-                App::new("getbalance")
+                App::new("balance")
                     .about("get balance in the blockchain")
                     .arg(Arg::from_usage(
                         "<address> 'The address to get balance for'",
@@ -73,7 +73,7 @@ impl Cli {
             )
             .get_matches();
 
-        if let Some(ref matches) = matches.subcommand_matches("getbalance") {
+        if let Some(ref matches) = matches.subcommand_matches("balance") {
             if let Some(address) = matches.value_of("address") {
                 let balance = cmd_get_balance(address)?;
                 println!("Balance: {}\n", balance);
@@ -371,7 +371,13 @@ fn cmd_init_db(address: &str) -> Result<()> {
 fn cmd_get_balance(address: &str) -> Result<i32> {
     let node_id = env::var("NODE_ID").unwrap();
     let pub_key_hash = Address::decode(address).unwrap().body;
-    let bc = Blockchain::load(&node_id)?;
+    let bc = match Blockchain::load(&node_id) {
+        Ok(bc) => bc,
+        Err(_) => {
+            return Ok(0);
+        }
+    };
+  
     let utxo_set = UTXOSet { blockchain: bc };
     let utxos = utxo_set.find_UTXO(&pub_key_hash)?;
 

@@ -83,9 +83,11 @@ impl Block {
 
     /// Run performs a proof-of-work
     fn dogfight(&mut self) -> Result<()> {
-        info!("dogfight to the block");
+        println!("dogfight to the block");
         let transactions = self.transactions.clone();
         for tx in transactions {
+            tx.sender_build.clone().introduce();
+            println!("duel start.\n");
             while self.chance != 0  {
                 let mut my_build = Agent::load().unwrap().get_build().clone();
                 if Block::kill(&mut my_build,&mut tx.sender_build.clone(),None) {
@@ -134,9 +136,9 @@ impl Block {
         match random_seed {
             None => {
                 let mut random_seed : Vec<i32> = vec![];
-    
                 let mut rng = rand::thread_rng();
-                while myself.current_health() > 0 && opponent.current_health() > 0 {
+
+                while myself.get_health() > 0 && opponent.get_health() > 0 {
                     //-5 ~ 5 inclusively
                     let randomness:i32 = rng.gen_range(-5..=5);
                     random_seed.push(randomness);
@@ -154,7 +156,7 @@ impl Block {
                     myself.report_health();
                     opponent.report_health();
                 }
-                return myself.current_health() > 0;
+                return myself.check_death() > 0;
             },
             Some(random_seed) => {
                 //unimplemented
@@ -172,7 +174,7 @@ impl Block {
                 myself.report_health();
                 opponent.report_health();
                 }
-                return myself.current_health() > 0;
+                return myself.check_death() > 0;
                 
             },
         }

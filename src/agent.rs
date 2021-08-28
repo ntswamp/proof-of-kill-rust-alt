@@ -133,7 +133,11 @@ impl Build {
         }
     }
 
-    pub fn current_health(&self) -> i32 {
+    pub fn get_health(&self) -> i32 {
+        self.health
+    }
+
+    pub fn check_death(&self) -> i32 {
         if self.health <= 0 {
             self.die();
         }
@@ -173,7 +177,7 @@ impl Build {
     }
 */
     fn die(&self) {
-        println!("{} is died, game over.", self.name);
+        println!("{} is died, game over.\n", self.name);
     }
 }
 
@@ -210,15 +214,33 @@ impl Agent {
         };
         let db = sled::open(agent_path)?;
 
+        let agent_data = serialize(&agent)?;
+        db.insert("MYAGENT", agent_data);
+        Ok(agent)
+    }
+
+    pub fn load() -> Result<Agent> {
+        let node_id =  std::env::var("NODE_ID").unwrap();
+        let agent_path = "data_".to_owned() + &node_id + "/agent";
+        if !agent_exist(&agent_path) {
+            return Err(format_err!("No Existing Agent Found. Create One First."));
+        }
+
+        let db = sled::open(agent_path)?;
+        let agent_data = db.get("MYAGENT")?.unwrap();
+        let mut agent: Agent = deserialize(&agent_data.to_vec())?;
+
+        //load addresses
         for item in db.into_iter() {
             let i = item?;
+            if i.0.to_vec() == b"MYAGENT" {
+                continue;
+            }
             let address = String::from_utf8(i.0.to_vec())?;
             let keypair = deserialize(&i.1.to_vec())?;
             agent.addresses.insert(address, keypair);
         }
-        //drop(db);
-        let agent_data = serialize(&agent)?;
-        db.insert("MYAGENT", agent_data);
+        drop(db);
         Ok(agent)
     }
 
@@ -230,8 +252,7 @@ impl Agent {
         &self.build
     }
 
-
-    /// CreateWallet adds a Wallet to Wallets
+    /// generate an address for agent
     pub fn generate_address(&mut self) -> String {
         let keypair = Keypair::new();
         let address = keypair.address();
@@ -254,7 +275,7 @@ impl Agent {
         self.addresses.get(address)
     }
 
-    /// save agent to the disk
+    /// save agent and addresses to the disk
     pub fn save(&self) -> Result<()> {
         let node_id = std::env::var("NODE_ID").unwrap();
         let agent_path = "data_".to_owned() + &node_id + "/agent";
@@ -268,20 +289,6 @@ impl Agent {
         db.flush()?;
         drop(db);
         Ok(())
-    }
-
-    pub fn load() -> Result<Agent> {
-        let node_id =  std::env::var("NODE_ID").unwrap();
-        let agent_path = "data_".to_owned() + &node_id + "/agent";
-        if !agent_exist(&agent_path) {
-            return Err(format_err!("No Existing Agent Found. Create One First."));
-        }
-
-        let db = sled::open(agent_path)?;
-
-        let agent_data = db.get("MYAGENT")?.unwrap();
-        let agent: Agent = deserialize(&agent_data.to_vec())?;
-        Ok(agent)
     }
 }
 

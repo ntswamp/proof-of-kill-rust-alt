@@ -37,6 +37,7 @@ impl Cli {
             .subcommand(App::new("chain").about("print out current state of blockchain"))
             .subcommand(App::new("newagent").about("(re)create an agent to start collecting coins!"))
             .subcommand(App::new("agent").about("show agent stats"))
+            .subcommand(App::new("newaddress").about("create an address for your agent"))
             .subcommand(App::new("address").about("list all addresses held by your agent"))
             .subcommand(App::new("reindex").about("reindex UTXO"))
             .subcommand(
@@ -81,14 +82,15 @@ impl Cli {
             println!("address: {}", cmd_newagent()?);
         } else if let Some(_) = matches.subcommand_matches("agent") {
             cmd_agent()?;
-        }
-         else if let Some(_) = matches.subcommand_matches("chain") {
+        } else if let Some(_) = matches.subcommand_matches("newaddress") {
+            cmd_newaddress()?;
+        } else if let Some(_) = matches.subcommand_matches("address") {
+            cmd_address()?;
+        } else if let Some(_) = matches.subcommand_matches("chain") {
             cmd_chain()?;
         } else if let Some(_) = matches.subcommand_matches("reindex") {
             let count = cmd_reindex()?;
             println!("Done! There are {} transactions in the UTXO set.", count);
-        } else if let Some(_) = matches.subcommand_matches("address") {
-            cmd_address()?;
         } else if let Some(ref matches) = matches.subcommand_matches("initdb") {
             if let Some(address) = matches.value_of("address") {
                 cmd_init_db(address)?;
@@ -337,6 +339,12 @@ fn cmd_agent()-> Result<()> {
         },
         Err(err) => return Err(err),
     }
+}
+
+fn cmd_newaddress() ->Result<()> {
+    let mut agent = Agent::load().unwrap();
+    println!("new address generated:{}",agent.generate_address());
+    Ok(())
 }
 
 fn cmd_reindex() -> Result<i32> {

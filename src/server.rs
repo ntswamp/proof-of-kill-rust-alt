@@ -160,7 +160,7 @@ impl Server {
         self.inner.lock().unwrap().known_nodes.clone()
     }
 
-    fn node_is_known(&self, addr: &str) -> bool {
+    fn is_node_known(&self, addr: &str) -> bool {
         self.inner.lock().unwrap().known_nodes.get(addr).is_some()
     }
 
@@ -357,7 +357,7 @@ impl Server {
 
         self.send_addr(&msg.from_ip)?;
 
-        if !self.node_is_known(&msg.from_ip) {
+        if !self.is_node_known(&msg.from_ip) {
             self.add_nodes(&msg.from_ip);
         }
         Ok(())

@@ -155,12 +155,14 @@ impl Build {
         }
         
         let damage = self.attack + (randomness as f32 * 0.8) as i32;
-        println!("{} deals {} damage to opponent agent.", self.name, damage);
+        //println!("{} deals {} damage to opponent agent.", self.name, damage);
+        println!("deals {} damage to opponent agent.", damage);
         damage
     }
 
     pub fn take_damage(&mut self, damage: i32) {
-        println!("{} took {} damage from opponent agent. Ooouch!", self.name, damage);
+        //println!("{} took {} damage from opponent agent. Ooouch!", self.name, damage);
+        println!("took {} damage from opponent agent. Ooouch!", damage);
         self.health = self.health - damage;
     }
 
@@ -223,7 +225,7 @@ impl Agent {
     pub fn load() -> Result<Agent> {
         let node_id =  std::env::var("NODE_ID").unwrap();
         let agent_path = "data_".to_owned() + &node_id + "/agent";
-        if !agent_exist(&agent_path) {
+        if !Is_agent_exists(&agent_path) {
             return Err(format_err!("No Existing Agent Found. Create One First."));
         }
 
@@ -294,7 +296,7 @@ impl Agent {
 }
 
 ///Returns true if db_path points at an existing entity.
-pub fn agent_exist(agent_path: &str) -> bool {
+pub fn Is_agent_exists(agent_path: &str) -> bool {
     std::path::Path::new(agent_path).exists()
 }
 

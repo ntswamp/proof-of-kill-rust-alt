@@ -90,7 +90,7 @@ impl Block {
             println!("duel start.\n");
             while self.chance != 0  {
                 let mut my_build = Agent::load().unwrap().get_build().clone();
-                if Block::kill(&mut my_build,&mut tx.sender_build.clone(),None) {
+                if Block::is_opponent_killed(&mut my_build,&mut tx.sender_build.clone(),None) {
                     self.kills += 1;
                 }
                 self.chance -= 1;
@@ -131,8 +131,8 @@ impl Block {
         Ok(bytes)
     }
 
-    /// kill() return true if killed the opponent.
-    fn kill(myself: &mut Build, opponent: &mut Build,random_seed:Option<Vec<i32>>) -> bool {
+    /// is_opponent_killed() return true if killed the opponent.
+    fn is_opponent_killed(myself: &mut Build, opponent: &mut Build,random_seed:Option<Vec<i32>>) -> bool {
         match random_seed {
             None => {
                 let mut random_seed : Vec<i32> = vec![];

@@ -37,8 +37,8 @@ impl Cli {
             .subcommand(App::new("chain").about("print out current state of blockchain"))
             .subcommand(App::new("newagent").about("(re)create an agent to start collecting coins!"))
             .subcommand(App::new("agent").about("show agent stats"))
-            .subcommand(App::new("newaddress").about("create an address for your agent"))
-            .subcommand(App::new("address").about("list all addresses held by your agent"))
+            .subcommand(App::new("newaddr").about("create an address for your agent"))
+            .subcommand(App::new("addr").about("list all addresses held by your agent"))
             .subcommand(App::new("reindex").about("reindex UTXO"))
             .subcommand(
                 App::new("startnode")
@@ -52,7 +52,7 @@ impl Cli {
                     .arg(Arg::from_usage("<address> 'wallet address'")),
             )
             .subcommand(
-                App::new("balance")
+                App::new("bal")
                     .about("get balance in the blockchain")
                     .arg(Arg::from_usage(
                         "<address> 'The address to get balance for'",
@@ -73,19 +73,19 @@ impl Cli {
             )
             .get_matches();
 
-        if let Some(ref matches) = matches.subcommand_matches("balance") {
+        if let Some(ref matches) = matches.subcommand_matches("bal") {
             if let Some(address) = matches.value_of("address") {
-                let balance = cmd_get_balance(address)?;
+                let balance = cmd_bal(address)?;
                 println!("Balance: {}\n", balance);
             }
         } else if let Some(_) = matches.subcommand_matches("newagent") {
             println!("address: {}", cmd_newagent()?);
         } else if let Some(_) = matches.subcommand_matches("agent") {
             cmd_agent()?;
-        } else if let Some(_) = matches.subcommand_matches("newaddress") {
-            cmd_newaddress()?;
-        } else if let Some(_) = matches.subcommand_matches("address") {
-            cmd_address()?;
+        } else if let Some(_) = matches.subcommand_matches("newaddr") {
+            cmd_newaddr()?;
+        } else if let Some(_) = matches.subcommand_matches("addr") {
+            cmd_addr()?;
         } else if let Some(_) = matches.subcommand_matches("chain") {
             cmd_chain()?;
         } else if let Some(_) = matches.subcommand_matches("reindex") {
@@ -341,7 +341,7 @@ fn cmd_agent()-> Result<()> {
     }
 }
 
-fn cmd_newaddress() ->Result<()> {
+fn cmd_newaddr() ->Result<()> {
     let mut agent = Agent::load().unwrap();
     let address = agent.generate_address();
     agent.save()?;
@@ -368,7 +368,7 @@ fn cmd_init_db(address: &str) -> Result<()> {
     Ok(())
 }
 
-fn cmd_get_balance(address: &str) -> Result<i32> {
+fn cmd_bal(address: &str) -> Result<i32> {
     let node_id = env::var("NODE_ID").unwrap();
     let pub_key_hash = Address::decode(address).unwrap().body;
     let bc = match Blockchain::load(&node_id) {
@@ -397,7 +397,7 @@ fn cmd_chain() -> Result<()> {
     Ok(())
 }
 
-fn cmd_address() -> Result<()> {
+fn cmd_addr() -> Result<()> {
     let agent = Agent::load().unwrap();
     let addresses = agent.get_all_addresses();
     println!("addresses: ");
@@ -417,21 +417,21 @@ mod test {
         let addr2 = cmd_newagent().unwrap();
         cmd_init_db(&addr1).unwrap();
 
-        let b1 = cmd_get_balance(&addr1).unwrap();
-        let b2 = cmd_get_balance(&addr2).unwrap();
+        let b1 = cmd_bal(&addr1).unwrap();
+        let b2 = cmd_bal(&addr2).unwrap();
         assert_eq!(b1, 10);
         assert_eq!(b2, 0);
 
         cmd_send(&addr1, &addr2, 5, true).unwrap();
 
-        let b1 = cmd_get_balance(&addr1).unwrap();
-        let b2 = cmd_get_balance(&addr2).unwrap();
+        let b1 = cmd_bal(&addr1).unwrap();
+        let b2 = cmd_bal(&addr2).unwrap();
         assert_eq!(b1, 15);
         assert_eq!(b2, 5);
 
         cmd_send(&addr2, &addr1, 15, true).unwrap_err();
-        let b1 = cmd_get_balance(&addr1).unwrap();
-        let b2 = cmd_get_balance(&addr2).unwrap();
+        let b1 = cmd_bal(&addr1).unwrap();
+        let b2 = cmd_bal(&addr2).unwrap();
         assert_eq!(b1, 15);
         assert_eq!(b2, 5);
     }

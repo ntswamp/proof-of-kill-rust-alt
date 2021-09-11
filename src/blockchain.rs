@@ -30,7 +30,7 @@ impl Blockchain {
         info!("Initialize New Blockchain");
         //e.g., data_3000/chain
         let db_path = "data_".to_owned() + node_id + "/chain";
-        if db_exist(&db_path) {
+        if Is_db_exists(&db_path) {
             return Err(format_err!("ERROR: Blockchain Already Exists."));
         }
 
@@ -56,7 +56,7 @@ impl Blockchain {
     pub fn load(node_id:&str) -> Result<Blockchain> {
         //e.g., data/chain_3000
         let db_path = "data_".to_owned() + node_id + "/chain";
-        if !db_exist(&db_path) {
+        if !Is_db_exists(&db_path) {
             return Err(format_err!("blockchain database is not initialized.\nuse command `initdb` to initialize one."));
         }
 
@@ -272,6 +272,6 @@ impl<'a> Iterator for BlockchainIterator<'a> {
 }
 
 ///Returns true if db_path points at an existing entity.
-pub fn db_exist(db_path: &str) -> bool {
+pub fn Is_db_exists(db_path: &str) -> bool {
     std::path::Path::new(db_path).exists()
 }

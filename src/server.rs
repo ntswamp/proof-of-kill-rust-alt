@@ -79,7 +79,7 @@ struct ServerInner {
     mempool: HashMap<String, Transaction>,
 }
 
-const CENTRAL_NODE: &str = "localhost:3000";
+const CENTRAL_NODE: &str = "localhost:3333";
 const CMD_LEN: usize = 12;
 const VERSION: i32 = 1;
 
@@ -99,7 +99,7 @@ impl Server {
         })
     }
 
-    pub fn start_server(&self) -> Result<()> {
+    pub fn start(&self) -> Result<()> {
         let server1 = Server {
             node_ip: self.node_ip.clone(),
             mining_address: self.mining_address.clone(),
@@ -114,6 +114,8 @@ impl Server {
             thread::sleep(Duration::from_millis(1000));
             //if server1 has not any existing blockchain yet
             if server1.get_best_height()? == u128::MAX {
+                //server1.request_blocks()
+                //request blocks from localhost:3333
                 server1.request_blocks()
             } else {
                 server1.send_version(CENTRAL_NODE)
@@ -142,7 +144,7 @@ impl Server {
         Ok(())
     }
 
-    /* ------------------- inner halp functions ----------------------------------*/
+    /* ------------------- helper functions for Server ----------------------------------*/
 
     fn remove_node(&self, addr: &str) {
         self.inner.lock().unwrap().known_nodes.remove(addr);
@@ -292,6 +294,7 @@ impl Server {
         self.send_data(addr, &data)
     }
 
+    //addr = localhost:3333 by default
     fn request_get_blocks(&self, addr: &str) -> Result<()> {
         info!("send get blocks message to: {}", addr);
         let data = GetBlocksmsg {
@@ -368,7 +371,13 @@ impl Server {
         for node in msg {
             self.add_nodes(&node);
         }
+        /*
         //self.request_blocks()?;
+        for node in self.get_known_nodes() {
+            self.request_get_blocks(&node)?
+        }
+        Ok(())
+        */
         Ok(())
     }
 

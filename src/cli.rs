@@ -125,7 +125,8 @@ impl Cli {
                 let bc = Blockchain::load(&node_id)?;
                 let utxo_set = UTXOSet { blockchain: bc };
                 let server = Server::new(port, "", utxo_set)?;
-                server.start_server()?;
+                //will start a server with node_id = localhost:port, known_nodes = localhost:3333
+                server.start()?;
             }
         } else if let Some(ref matches) = matches.subcommand_matches("startminer") {
             let address = if let Some(address) = matches.value_of("address") {
@@ -144,7 +145,7 @@ impl Cli {
             let bc = Blockchain::load(&node_id)?;
             let utxo_set = UTXOSet { blockchain: bc };
             let server = Server::new(port, address, utxo_set)?;
-            server.start_server()?;
+            server.start()?;
         }
 
         Ok(())

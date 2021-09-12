@@ -165,7 +165,8 @@ fn cmd_send(from: &str, to: &str, amount: i32, mine_now: bool) -> Result<()> {
 
         utxo_set.update(&new_block)?;
     } else {
-        Server::send_transaction(&tx, utxo_set)?;
+        let server = Server::new("7000", "", utxo_set)?;
+        server.send_tx(CENTRAL_NODE, &tx)?;
     }
 
     println!("success!");

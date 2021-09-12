@@ -79,7 +79,7 @@ struct ServerInner {
     mempool: HashMap<String, Transaction>,
 }
 
-const CENTRAL_NODE: &str = "localhost:3333";
+pub const CENTRAL_NODE: &str = "localhost:3333";
 const CMD_LEN: usize = 12;
 const VERSION: i32 = 1;
 
@@ -135,12 +135,6 @@ impl Server {
             thread::spawn(move || server1.handle_connection(stream));
         }
 
-        Ok(())
-    }
-
-    pub fn send_transaction(tx: &Transaction, utxoset: UTXOSet) -> Result<()> {
-        let server = Server::new("7000", "", utxoset)?;
-        server.send_tx(CENTRAL_NODE, tx)?;
         Ok(())
     }
 
@@ -454,7 +448,9 @@ impl Server {
 
         let known_nodes = self.get_known_nodes();
         if self.node_ip == CENTRAL_NODE {
+            //known_nodes only contains localhost:3333
             for node in known_nodes {
+                //i am not CENTRAL_NODE && incomming tx is not from CENTRAL_NODE
                 if node != self.node_ip && node != msg.from_ip {
                     self.send_inv(&node, "tx", vec![msg.transaction.id.clone()])?;
                 }

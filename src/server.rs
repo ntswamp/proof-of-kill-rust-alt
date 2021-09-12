@@ -73,7 +73,7 @@ pub struct Server {
 }
 
 struct ServerInner {
-    known_nodes: HashSet<String>,
+    known_node: HashSet<String>,
     utxo: UTXOSet,
     blocks_in_transit: Vec<String>,
     mempool: HashMap<String, Transaction>,
@@ -85,13 +85,13 @@ const VERSION: i32 = 1;
 
 impl Server {
     pub fn new(port: &str, miner_address: &str, utxo: UTXOSet) -> Result<Server> {
-        let mut node_set = HashSet::new();
-        node_set.insert(String::from(CENTRAL_NODE));
+        let mut known_node = HashSet::new();
+        known_node.insert(String::from(CENTRAL_NODE));
         Ok(Server {
             node_ip: String::from("localhost:") + port,
             mining_address: miner_address.to_string(),
             inner: Arc::new(Mutex::new(ServerInner {
-                known_nodes: node_set,
+                known_node: known_node,
                 utxo,
                 blocks_in_transit: Vec::new(),
                 mempool: HashMap::new(),
@@ -147,23 +147,23 @@ impl Server {
     /* ------------------- helper functions for Server ----------------------------------*/
 
     fn remove_node(&self, addr: &str) {
-        self.inner.lock().unwrap().known_nodes.remove(addr);
+        self.inner.lock().unwrap().known_node.remove(addr);
     }
 
     fn add_nodes(&self, addr: &str) {
         self.inner
             .lock()
             .unwrap()
-            .known_nodes
+            .known_node
             .insert(String::from(addr));
     }
 
     fn get_known_nodes(&self) -> HashSet<String> {
-        self.inner.lock().unwrap().known_nodes.clone()
+        self.inner.lock().unwrap().known_node.clone()
     }
 
     fn is_node_known(&self, addr: &str) -> bool {
-        self.inner.lock().unwrap().known_nodes.get(addr).is_some()
+        self.inner.lock().unwrap().known_node.get(addr).is_some()
     }
 
     fn replace_in_transit(&self, hashs: Vec<String>) {
@@ -318,14 +318,14 @@ impl Server {
         self.send_data(addr, &data)
     }
 
-    pub fn send_tx(&self, addr: &str, tx: &Transaction) -> Result<()> {
-        info!("send tx to: {} txid: {}", addr, &tx.id);
+    pub fn send_tx(&self, to_addr: &str, tx: &Transaction) -> Result<()> {
+        info!("send tx to: {} txid: {}", to_addr, &tx.id);
         let data = Txmsg {
             from_ip: self.node_ip.clone(),
             transaction: tx.clone(),
         };
         let data = serialize(&(cmd_to_byte("tx"), data))?;
-        self.send_data(addr, &data)
+        self.send_data(to_addr, &data)
     }
 
     fn send_version(&self, to_ip: &str) -> Result<()> {
